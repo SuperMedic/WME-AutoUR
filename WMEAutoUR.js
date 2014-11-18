@@ -5,15 +5,17 @@
 // @include     https://www.waze.com/editor/*
 // @include     https://www.waze.com/*editor/*
 // @include     https://editor-beta.waze.com/*editor/*
-// @version     0.7.4
+// @version     0.7.5
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
+// @downloadURL https://greasyfork.org/scripts/6508-wme-autour/code/WME%20AutoUR.user.js
 // ==/UserScript==
 
 
 /* Changelog
- * 0.7.3 - Updated webpage includes where script is run
+ * 0.7.5 - added @downloadURL
+ * 0.7.4 - Updated webpage includes where script is run
  * 0.7.3 - Updated @since comments
  * 0.7.2 - Added title, dev info, and added to GitHub
  * 0.7.1 - Create default settings for new install
@@ -77,7 +79,7 @@ function WMEAutoUR_init() {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-var version = '0.7.4';
+WMEAutoUR.version = '0.7.5';
 
 
 // Feature detect + local reference
@@ -167,7 +169,7 @@ try {
 										.css("border-radius","5px")
 										.css("padding","3px")
 										.css("margin-bottom","3px")
-										.html("WME-AutoUR " + version)
+										.html("WME-AutoUR " + WMEAutoUR.version)
 										.dblclick(WMEAutoUR.showDevInfo)
 										.attr("title","Click for Development Info"));
 				$(WMEAutoUR.MainDIV_left).append($("<button>Prev</button>")
