@@ -3,7 +3,7 @@
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
 // @include     https://www.waze.com/editor/*
-// @version     0.7.2
+// @version     0.7.3
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -11,6 +11,7 @@
 
 
 /* Changelog
+ * 0.7.3 - Updated @since comments
  * 0.7.2 - Added title, dev info, and added to GitHub
  * 0.7.1 - Create default settings for new install
  * 0.6.1 - Create dropdown for choosing message to insert/edit
@@ -73,7 +74,7 @@ function WMEAutoUR_init() {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-var version = '0.7.2';
+var version = '0.7.3';
 
 
 // Feature detect + local reference
