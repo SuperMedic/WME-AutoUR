@@ -11,11 +11,12 @@
 
 
 /* Changelog
- * 0.7.2 - Added title
- * 0.7.1 - Create default settings for new instal
- * 0.7.0 - Update changeMessage to allow access by ID/reference
- * 0.6.0 - Change user UR messages to be injected
- * 0.5.2 - Load user settings
+ * 0.7.2 - Added title, dev info, and added to GitHub
+ * 0.7.1 - Create default settings for new install
+ * 0.6.1 - Create dropdown for choosing message to insert/edit
+ * 0.6.0 - Update changeMessage to allow access by ID/reference
+ * 0.5.0 - Allow changes to user UR messages to be injected
+ * 0.4.2 - Load user settings
  * 0.4.1 - Save user settings
  * 0.4.0 - Access user settings
  * 0.3.1 - Create toolbar pannel
@@ -59,7 +60,7 @@ function wme_auto_ur_bootstrap() {
 
 
 /**
- *@since version 1.0.0
+ *@since version 0.0.1
  */
 function WMEAutoUR_init() {
     console.info("WME-AutoUR: starting (init)");
@@ -77,7 +78,7 @@ var version = '0.7.2';
 
 // Feature detect + local reference
 /**
- *@since version 3.0.0
+ *@since version 0.4.0
  */
 var AURstorage,
     fail,
@@ -96,7 +97,7 @@ try {
 
 
 		/**
-		 *@since version 1.0.0
+		 *@since version 0.0.1
 		 */
 		WMEAutoUR.init = function() {
 
@@ -259,7 +260,7 @@ try {
 
 
 		/**
-		 *@since version 1.0.0
+		 *@since version 0.0.1
 		 */
 		WMEAutoUR.transformCoords = function(coords) {
 			console.info("WME-AutoUR: transformCoords");
@@ -268,7 +269,7 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 1.2.0
+		 *@since version 0.1.0
 		 */
 		WMEAutoUR.gotoURByIndex = function(URindex) {
 			WMEAutoUR.curURid = WMEAutoUR.UR_IDs[URindex];
@@ -278,7 +279,7 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 1.2.0
+		 *@since version 0.1.0
 		 */
 		WMEAutoUR.gotoURById = function(URId) {
 			Waze.updateRequestsControl.selectById(URId);
@@ -293,7 +294,7 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 1.2.0
+		 *@since version 0.1.0
 		 */
 		WMEAutoUR.getIDs = function() {
 			console.info("WME-AutoUR: Getting UR IDs");
@@ -318,7 +319,7 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 1.2.0
+		 *@since version 0.1.0
 		 */
 		WMEAutoUR.firstUR = function() {
 			WMEAutoUR.gotoURByIndex(WMEAutoUR.index);
@@ -326,7 +327,7 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 1.2.0
+		 *@since version 0.1.0
 		 */
 		WMEAutoUR.nextUR = function() {
 			console.info('WME-AutoUR: nextUR');
@@ -337,7 +338,7 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 1.2.0
+		 *@since version 0.1.0
 		 */
 		WMEAutoUR.prevUR = function() {
 			console.info('WME-AutoUR: prevUR');
@@ -348,7 +349,7 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 1.3.0
+		 *@since version 0.2.0
 		 */
 		WMEAutoUR.getInfo = function() {
 			console.info('WME-AutoUR: UR Info');
@@ -389,7 +390,7 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 2.0.0
+		 *@since version 0.3.0
 		 */
 		WMEAutoUR.insertComment = function() {
 			console.info("WME-AutoUR: Insert Comment");
@@ -398,7 +399,7 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 2.1.0
+		 *@since version 0.3.1
 		 */
 		WMEAutoUR.showHideTools = function() {
 			console.info("WME-AutoUR: Show/Hide Tools");
@@ -411,7 +412,7 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 3.0.1
+		 *@since version 0.4.1
 		 */
 		WMEAutoUR.saveSettings = function() {
 			console.info("WME-AutoUR: Save Settings");
@@ -422,7 +423,7 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 3.0.2
+		 *@since version 0.4.2
 		 */
 		WMEAutoUR.loadSettings = function() {
 			console.info("WME-AutoUR: Load Settings");
@@ -431,7 +432,7 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 3.1.1
+		 *@since version 0.5.0
 		 */
 		WMEAutoUR.saveMessage = function() {
 			console.info("WME-AutoUR: Set Message: " + $("#WME_AutoUR_MSG_default_comment").val());
@@ -441,7 +442,7 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 3.1.1
+		 *@since version 0.5.0
 		 */
 		WMEAutoUR.changeMessage = function() {
 			console.info("WME-AutoUR: changeMessage");
@@ -480,7 +481,7 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 2.1.0
+		 *@since version 0.6.1
 		 */
 		WMEAutoUR.createMsgSelect = function() {
 			console.info("WME-AutoUR: Create Select");
@@ -497,11 +498,23 @@ try {
 		}
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.7.2
+		 */
+		WMEAutoUR.showDevInfo = function() {
+			var info_txt = '';
+			info_txt = info_txt + 'Created by: <b>SuperMedic</b><br>';
+			info_txt = info_txt + 'Beta Testers:<br>';
+			info_txt = info_txt + '<b>Stephenr1966</b><br>';
+			$('span[id="WME_AutoUR_Info"]').html(info_txt);
+		}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 1.0.0
+		 *@since version 0.0.1
 		 */
 		WMEAutoUR.startcode = function () {
 			console.info("WME-AutoUR: startcode");
