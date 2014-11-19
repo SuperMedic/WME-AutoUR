@@ -13,7 +13,6 @@
 
 
 /* Changelog
- * 0.8.1 - Cleaned up code and better checking of waze initialization
  * 0.8.0 - Added Google Chrome support
  * 0.7.5 - added @downloadURL
  * 0.7.4 - Updated webpage includes where script is run
@@ -112,14 +111,13 @@ try {
 
 	// --- Setup Options --- //
 	WMEAutoUR.options = {};
-	WMEAutoUR.options['name'] = 'test';
 
 			// --- Load Settings --- //
 			WMEAutoUR.loadSettings();
 
-
 			console.info("WME-AutoUR: starting (init.init)");
-			//add the buttons to the chat title bar to hide/show user list and max and min
+
+			// See if the div is already created //
 			if ($("#WME_AutoUR_main").length==0) {
 
 // ---------- MAIN DIV --------- //
@@ -261,6 +259,7 @@ try {
 		 *@since version 0.1.0
 		 */
 		WMEAutoUR.gotoURByIndex = function(URindex) {
+			console.info("WME-AutoUR: gotoURByIndex");
 			WMEAutoUR.curURid = WMEAutoUR.UR_IDs[URindex];
 			WMEAutoUR.gotoURById(WMEAutoUR.curURid);
 			return;
@@ -271,6 +270,7 @@ try {
 		 *@since version 0.1.0
 		 */
 		WMEAutoUR.gotoURById = function(URId) {
+			console.info("WME-AutoUR: gotoURById" + URId);
 			Waze.updateRequestsControl.selectById(URId);
 			var x = Waze.updateRequestsControl.currentRequest.attributes.geometry.x;
 			var y = Waze.updateRequestsControl.currentRequest.attributes.geometry.y;
@@ -287,7 +287,7 @@ try {
 		 */
 		WMEAutoUR.getIDs = function() {
 			console.info("WME-AutoUR: Getting UR IDs");
-			WMEAutoUR.UR_Objs = Waze.model.updateRequestSessions.objects;
+			WMEAutoUR.UR_Objs = Waze.model.mapUpdateRequests.objects;
 			WMEAutoUR.UR_IDs = [];
 			WMEAutoUR.UR_len = 0;
 			for(var e in WMEAutoUR.UR_Objs) {
