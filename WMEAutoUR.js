@@ -5,7 +5,7 @@
 // @include     https://www.waze.com/editor/*
 // @include     https://www.waze.com/*editor/*
 // @include     https://editor-beta.waze.com/*editor/*
-// @version     0.8.1
+// @version     0.8.2
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -13,6 +13,7 @@
 
 
 /* Changelog
+ * 0.8.2 - Removed auto UR find
  * 0.8.1 - Cleaned up INIT code
  * 0.8.0 - Added Google Chrome support
  * 0.7.5 - added @downloadURL
@@ -80,7 +81,7 @@ function WMEAutoUR_init() {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-	WMEAutoUR.version = '0.8.1';
+	WMEAutoUR.version = '0.8.2';
 
 
 // Feature detect + local reference
@@ -120,7 +121,9 @@ try {
 
 			WMEAutoUR.index = 0;
 
-			WMEAutoUR.getIDs();
+// Turned off auto UR finding
+// Can auto find by double click ?/? box
+			//WMEAutoUR.getIDs();
 
 			$(document).tooltip();
 
