@@ -2,17 +2,17 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @include     https://www.waze.com/editor/*
-// @include     https://www.waze.com/*editor/*
-// @include     https://editor-beta.waze.com/*editor/*
-// @version     0.8.2
+// @version     0.9.0
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
+// @match       https://www.waze.com/editor/*
 // ==/UserScript==
 
 
 /* Changelog
+ * 0.9.0 - Added support for manually choosing UR
+ * 0.8.3 - Organized code
  * 0.8.2 - Removed auto UR find
  * 0.8.1 - Cleaned up INIT code
  * 0.8.0 - Added Google Chrome support
@@ -87,6 +87,8 @@ function WMEAutoUR_init() {
 // Feature detect + local reference
 /**
  *@since version 0.4.0
+ *do i even need this
+ *### REVIEW ###
  */
 var AURstorage,
     fail,
@@ -98,10 +100,6 @@ try {
   AURstorage.removeItem(uid);
   fail && (AURstorage = false);
 } catch(e) {}
-
-
-		// --- Setup Storage --- //
-		//AURstorage;
 
 
 		/**
@@ -121,9 +119,10 @@ try {
 
 			WMEAutoUR.index = 0;
 
-// Turned off auto UR finding
-// Can auto find by double click ?/? box
+// @since 0.8.2 - Turned off auto UR finding
 			//WMEAutoUR.getIDs();
+
+			window.setInterval(WMEAutoUR.getActiveUR,250);
 
 			$(document).tooltip();
 
@@ -132,7 +131,6 @@ try {
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //----------------  Create floating UI  ------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
-
 
 		/**
 		 *@since version 0.8.1
@@ -287,6 +285,8 @@ try {
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
+//----------------  UNIVERSAL UI FUNCTIONS  -------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
 		 *@since version 0.6.1
 		 */
@@ -305,43 +305,37 @@ try {
 		}
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
+//----------------  END UNIVERSAL UI FUNCTIONS  ----------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------  MANUAL UR FUNCTIONS  -----------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 		/**
-		 *@since version 0.0.1
+		 *@since version 0.9.0
 		 */
-		WMEAutoUR.transformCoords = function(coords) {
-			console.info("WME-AutoUR: transformCoords");
-			return coords.transform(new OpenLayers.Projection("EPSG:900913"),new OpenLayers.Projection("EPSG:4326"));
+		WMEAutoUR.getActiveUR = function() {
+			console.info("WME-AutoUR: getActiveUR");
+
+			var urID = Waze.updateRequestsControl.currentRequest.attributes.id;
+
+			if(Waze.updateRequestsControl.currentRequest && (WMEAutoUR.activeUR != urID)) {
+				WMEAutoUR.activeUR = urID;
+				WMEAutoUR.getInfo();
+				WMEAutoUR.changeMessage(Waze.updateRequestsControl.currentRequest.attributes.type);
+			}
+
 		}
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
-		/**
-		 *@since version 0.1.0
-		 */
-		WMEAutoUR.gotoURByIndex = function(URindex) {
-			console.info("WME-AutoUR: gotoURByIndex");
-			WMEAutoUR.curURid = WMEAutoUR.UR_IDs[URindex];
-			WMEAutoUR.gotoURById(WMEAutoUR.curURid);
-			return;
-		}
+//----------------------  END MANUAL UR FUNCTIONS  -------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
-		/**
-		 *@since version 0.1.0
-		 */
-		WMEAutoUR.gotoURById = function(URId) {
-			console.info("WME-AutoUR: gotoURById" + URId);
-			Waze.updateRequestsControl.selectById(URId);
-			var x = Waze.updateRequestsControl.currentRequest.attributes.geometry.x;
-			var y = Waze.updateRequestsControl.currentRequest.attributes.geometry.y;
-			Waze.map.setCenter([x,y],3);
-			WMEAutoUR.getInfo();
-			WMEAutoUR.changeMessage(Waze.updateRequestsControl.currentRequest.attributes.type);
-			$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.index+1)+"/"+WMEAutoUR.UR_len);
-			return;
-		}
-
+//----------------------  AUTO UR FUNCTIONS  -------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
 		 *@since version 0.1.0
@@ -396,7 +390,23 @@ try {
 				WMEAutoUR.gotoURByIndex(--WMEAutoUR.index);
 			}
 		}
+//--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.1.0
+		 */
+		WMEAutoUR.gotoURByIndex = function(URindex) {
+			console.info("WME-AutoUR: gotoURByIndex");
+			WMEAutoUR.curURid = WMEAutoUR.UR_IDs[URindex];
+			WMEAutoUR.gotoURById(WMEAutoUR.curURid);
+			return;
+		}
 
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------  END AUTO UR FUNCTIONS  ---------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------  UNIVERSAL UR FUNCTIONS  --------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
 		 *@since version 0.2.0
@@ -449,16 +459,23 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 0.3.1
+		 *@since version 0.1.0
 		 */
-		WMEAutoUR.showHideTools = function() {
-			console.info("WME-AutoUR: Show/Hide Tools");
-			switch($("#WME_AutoUR_main .WME_AutoUR_main_right").css("display")) {
-				case 'none': 	$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","block");	break;
-				case 'block':	$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","none");		break;
-				default:		$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","block");	break;
-			}
+		WMEAutoUR.gotoURById = function(URId) {
+			console.info("WME-AutoUR: gotoURById" + URId);
+			Waze.updateRequestsControl.selectById(URId);
+			var x = Waze.updateRequestsControl.currentRequest.attributes.geometry.x;
+			var y = Waze.updateRequestsControl.currentRequest.attributes.geometry.y;
+			Waze.map.setCenter([x,y],3);
+			WMEAutoUR.getInfo();
+			WMEAutoUR.changeMessage(Waze.updateRequestsControl.currentRequest.attributes.type);
+			$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.index+1)+"/"+WMEAutoUR.UR_len);
+			return;
 		}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------  END UNIVERSAL UR FUNCTIONS  ----------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
@@ -521,11 +538,6 @@ try {
 		 */
 		WMEAutoUR.changeMessage = function() {
 			console.info("WME-AutoUR: changeMessage");
-			//console.info("WME-AutoUR: " + arguments);
-			//console.info("WME-AutoUR: " + arguments.length);
-			//console.info("WME-AutoUR: " + arguments[0]);
-			//console.info("WME-AutoUR: " + (arguments.length == 1));
-			//console.info("WME-AutoUR: " + (typeof arguments[0] == "number"));
 
 			var index;
 			if((arguments.length == 1) && (typeof arguments[0] == "number")) {
@@ -555,6 +567,8 @@ try {
 		}
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------  OTHER FUNCTIONS  -------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
 		 *@since version 0.7.2
 		 */
@@ -567,7 +581,46 @@ try {
 		}
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
+
+		/**
+		 *@since version 0.3.1
+		 */
+		WMEAutoUR.showHideTools = function() {
+			console.info("WME-AutoUR: Show/Hide Tools");
+			switch($("#WME_AutoUR_main .WME_AutoUR_main_right").css("display")) {
+				case 'none': 	$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","block");	break;
+				case 'block':	$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","none");		break;
+				default:		$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","block");	break;
+			}
+		}
+
 //--------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------  END OTHER FUNCTIONS  ---------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//----------------  HELPER FUCNTIONS  --------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+		/**
+		 *@since version 0.0.1
+		 */
+		WMEAutoUR.transformCoords = function(coords) {
+			console.info("WME-AutoUR: transformCoords");
+			return coords.transform(new OpenLayers.Projection("EPSG:900913"),new OpenLayers.Projection("EPSG:4326"));
+		}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//----------------  END HELPER FUCNTIONS  ----------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//-------------  ##########  START CODE FUNCTION ##########  ---------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
