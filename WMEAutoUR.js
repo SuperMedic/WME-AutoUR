@@ -5,7 +5,7 @@
 // @include     https://www.waze.com/editor/*
 // @include     https://www.waze.com/*editor/*
 // @include     https://editor-beta.waze.com/*editor/*
-// @version     0.8.0
+// @version     0.8.1
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -13,6 +13,7 @@
 
 
 /* Changelog
+ * 0.8.1 - Cleaned up INIT code
  * 0.8.0 - Added Google Chrome support
  * 0.7.5 - added @downloadURL
  * 0.7.4 - Updated webpage includes where script is run
@@ -79,7 +80,7 @@ function WMEAutoUR_init() {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-	WMEAutoUR.version = '0.7.5';
+	WMEAutoUR.version = '0.8.1';
 
 
 // Feature detect + local reference
@@ -107,144 +108,201 @@ try {
 		 */
 		WMEAutoUR.init = function() {
 
-
-
-	// --- Setup Options --- //
-	WMEAutoUR.options = {};
+			// --- Setup Options --- //
+			WMEAutoUR.options = {};
 
 			// --- Load Settings --- //
 			WMEAutoUR.loadSettings();
 
 			console.info("WME-AutoUR: starting (init.init)");
 
-			// See if the div is already created //
-			if ($("#WME_AutoUR_main").length==0) {
+			WMEAutoUR.createFloatingUI();
 
-// ---------- MAIN DIV --------- //
-				WMEAutoUR.MainDIV = $('<div>').css("background","rgba(117, 79, 150, 0.85)");
-				$(WMEAutoUR.MainDIV).attr("id","WME_AutoUR_main");
-				//$(WMEAutoUR.MainDIV).css("padding","10px");
-				$(WMEAutoUR.MainDIV).css("color","#FFFFFF");
-				$(WMEAutoUR.MainDIV).css("border-radius","10px");
-				$(WMEAutoUR.MainDIV).css("z-index","1000");
-				$(WMEAutoUR.MainDIV).css("position","absolute");
-				$(WMEAutoUR.MainDIV).css("display","block");
-				$("#panels-container").append(WMEAutoUR.MainDIV);
-
-				WMEAutoUR.MainDIV_left = $('<div>').addClass('WME_AutoUR_main_left')
-													.css("padding","10px")
-													.css("float","left");
-				$(WMEAutoUR.MainDIV).append(WMEAutoUR.MainDIV_left);
-				WMEAutoUR.MainDIV_right = $('<div>').addClass('WME_AutoUR_main_right')
-													.css("padding","10px")
-													.css("width","228px")
-													.css("text-align","center")
-													.css("float","right");
-				$(WMEAutoUR.MainDIV).append(WMEAutoUR.MainDIV_right);
-
-// ------- MAIN DIV LEFT  ------- //
-				$(WMEAutoUR.MainDIV_left).append($("<div>")
-										.css("width","100%")
-										.css("text-align","center")
-										.css("background-color","#000000")
-										.css("border-radius","5px")
-										.css("padding","3px")
-										.css("margin-bottom","3px")
-										.html("WME-AutoUR " + WMEAutoUR.version)
-										.dblclick(WMEAutoUR.showDevInfo)
-										.attr("title","Click for Development Info"));
-				$(WMEAutoUR.MainDIV_left).append($("<button>Prev</button>")
-										.click(WMEAutoUR.prevUR)
-										.attr("title","Previous UR"));
-				$(WMEAutoUR.MainDIV_left).append($("<button>Next</button>")
-										.click(WMEAutoUR.nextUR)
-										.attr("title","Next UR"));
-				$(WMEAutoUR.MainDIV_left).append($("<button>Tools</button>")
-										.click(WMEAutoUR.showHideTools)
-										.attr("title","Show/Hide Tools Pannel"));
-
-				$(WMEAutoUR.MainDIV_left).append($("<span id='WME_AutoUR_Info'>")
-											//.css("float","right")
-											.css("text-align","left")
-											.css("display","block")
-											.css("clear","both"));
-
-				$(WMEAutoUR.MainDIV_left).append($("<span id='WME_AutoUR_Count'>")
-											.css("text-align","right")
-											.css("display","block")
-											.css("clear","both")
-											.css("float","right")
-											.css("padding","3px")
-											.css("background-color","#000000")
-											.css("border-radius","5px")
-											.dblclick(WMEAutoUR.getIDs)
-											.attr("title","Double click to reload list of URs")
-											);
-
-// ------- MAIN DIV RIGHT  ------- //
-				$(WMEAutoUR.MainDIV_right).append($("<button>Insert</button>")
-										.click(WMEAutoUR.insertComment)
-										.css("float","left")
-										.attr("title","Insert Comment"));
-
-				$(WMEAutoUR.MainDIV_right).append($("<button>Save This</button>")
-										.click(WMEAutoUR.saveMessage)
-										.attr("title","Save Current Comment"));
-
-				$(WMEAutoUR.MainDIV_right).append($("<button>Save All</button>")
-										.click(WMEAutoUR.saveSettings)
-										//.css("clear","both")
-										.css("float","right")
-										//.css("margin-top","5px")
-										.attr("title","Save All Comments/Settings"));
-
-				$(WMEAutoUR.MainDIV_right).append($("<textarea>")
-										.attr("id","WME_AutoUR_MSG_default_comment")
-										.css("width","100%")
-										.css("height","150px")
-										.attr("title","Default Comment"));
-
-				$(WMEAutoUR.MainDIV_right).append($("<select>")
-										.attr("id","WME_AutoUR_MSG_Select")
-										.attr("title","Select Message")
-										.css("width","100%")
-										.change(WMEAutoUR.changeMessage)
-										.append("<option>-----</option>"));
-				WMEAutoUR.createMsgSelect();
-				WMEAutoUR.index = 0;
-
-// ------- MAIN DIV CSS  ------- //
-				//var WME_AutoUR_main_right_css = '.WME_AutoUR_main_right > * { clear: both; display: block; }';
-				//$(WMEAutoUR.MainDIV).append($('<style>')
-				//							.append(WME_AutoUR_main_right_css));
-
-
-				//$(WMEEditOverlayMainDIV).append($('<svg id="OpenLayers.Layer.Vector.RootContainer_336_svgRoot" style="display: block;" width="1339" height="309" viewBox="0 0 1339 309"></svg>').append(WMEEditOverlay.createPolyline));
-				//$(WMEEditOverlayMainDIV).append(WMEEditOverlay.createPolyline);
-
-				console.info("WME-AutoUR: Loaded Pannel");
-			}
+			WMEAutoUR.index = 0;
 
 			WMEAutoUR.getIDs();
 
-			//--- Drag me Bishes!! ---//
-			$( "#WME_AutoUR_main" ).draggable();
-			$( document ).tooltip();
-
-
-// MAP VIEW SIZE
-/*
-			var WMEAutoURViewport = Waze.map.getExtent();
-			var WMEAutoURViewTop = WMEAutoURViewport.top;
-			var WMEAutoURViewBottom = WMEAutoURViewport.bottom;
-			var WMEAutoURViewLeft = WMEAutoURViewport.left;
-			var WMEAutoURViewRight = WMEAutoURViewport.right;
-*/
+			$(document).tooltip();
 
 		}
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
+//----------------  Create floating UI  ------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
 
+
+		/**
+		 *@since version 0.8.1
+		 */
+		WMEAutoUR.createFloatingUI = function() {
+			console.info("WME-AutoUR: create floating UI");
+
+			// See if the div is already created //
+			if ($("#WME_AutoUR_main").length==0) {
+			  var MainDIV = WMEAutoUR.createFloatingMainDiv();
+			  $("#panels-container").append(MainDIV);
+
+			  $(MainDIV).append(WMEAutoUR.createFloatingLeftSubDiv);
+			  $(MainDIV).append(WMEAutoUR.createFloatingRightSubDiv);
+
+			  console.info("WME-AutoUR: Loaded Pannel");
+			}
+
+			//--- Drag me Bishes!! ---//
+			$( "#WME_AutoUR_main" ).draggable();
+		}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+		/**
+		 *@since version 0.8.1
+		 */
+		// ---------- MAIN DIV --------- //
+		WMEAutoUR.createFloatingMainDiv = function() {
+			console.info("WME-AutoUR: create main div ");
+
+			var MainDIV = $('<div>').css("background","rgba(117, 79, 150, 0.85)");
+			$(MainDIV).attr("id","WME_AutoUR_main");
+			//$(WMEAutoUR.MainDIV).css("padding","10px");
+			$(MainDIV).css("color","#FFFFFF");
+			$(MainDIV).css("border-radius","10px");
+			$(MainDIV).css("z-index","1000");
+			$(MainDIV).css("position","absolute");
+			$(MainDIV).css("display","block");
+
+			return MainDIV;
+		}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+		/**
+		 *@since version 0.8.1
+		 */
+		WMEAutoUR.createFloatingLeftSubDiv = function() {
+			console.info("WME-AutoUR: create L sub div");
+
+			MainDIV_left = $('<div>').addClass('WME_AutoUR_main_left')
+												.css("padding","10px")
+												.css("float","left");
+
+			// ------- MAIN DIV LEFT  ------- //
+			$(MainDIV_left).append($("<div>")
+							.css("width","100%")
+							.css("text-align","center")
+							.css("background-color","#000000")
+							.css("border-radius","5px")
+							.css("padding","3px")
+							.css("margin-bottom","3px")
+							.html("WME-AutoUR " + WMEAutoUR.version)
+							.dblclick(WMEAutoUR.showDevInfo)
+							.attr("title","Click for Development Info"));
+			$(MainDIV_left).append($("<button>Prev</button>")
+							.click(WMEAutoUR.prevUR)
+							.attr("title","Previous UR"));
+			$(MainDIV_left).append($("<button>Next</button>")
+							.click(WMEAutoUR.nextUR)
+							.attr("title","Next UR"));
+			$(MainDIV_left).append($("<button>Tools</button>")
+							.click(WMEAutoUR.showHideTools)
+							.attr("title","Show/Hide Tools Pannel"));
+
+			$(MainDIV_left).append($("<span id='WME_AutoUR_Info'>")
+							//.css("float","right")
+							.css("text-align","left")
+							.css("display","block")
+							.css("clear","both"));
+
+			$(MainDIV_left).append($("<span id='WME_AutoUR_Count'>")
+							.css("text-align","right")
+							.css("display","block")
+							.css("clear","both")
+							.css("float","right")
+							.css("padding","3px")
+							.css("background-color","#000000")
+							.css("border-radius","5px")
+							.html("?/?")
+							.dblclick(WMEAutoUR.getIDs)
+							.attr("title","Double click to reload list of URs")
+							);
+
+			return MainDIV_left;
+		}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+		/**
+		 *@since version 0.8.1
+		 */
+		// ------- MAIN DIV RIGHT  ------- //
+		WMEAutoUR.createFloatingRightSubDiv = function() {
+			console.info("WME-AutoUR: create R sub div");
+
+			MainDIV_right = $('<div>').addClass('WME_AutoUR_main_right')
+									  .css("padding","10px")
+									  .css("width","228px")
+									  .css("text-align","center")
+									  .css("float","right");
+
+
+			$(MainDIV_right).append($("<button>Insert</button>")
+							.click(WMEAutoUR.insertComment)
+							.css("float","left")
+							.attr("title","Insert Comment"));
+
+			$(MainDIV_right).append($("<button>Save This</button>")
+							.click(WMEAutoUR.saveMessage)
+							.attr("title","Save Current Comment"));
+
+			$(MainDIV_right).append($("<button>Save All</button>")
+							.click(WMEAutoUR.saveSettings)
+							//.css("clear","both")
+							.css("float","right")
+							//.css("margin-top","5px")
+							.attr("title","Save All Comments/Settings"));
+
+			$(MainDIV_right).append($("<textarea>")
+							.attr("id","WME_AutoUR_MSG_default_comment")
+							.css("width","100%")
+							.css("height","150px")
+							.attr("title","Default Comment"));
+
+			var select = $("<select>")
+						  .attr("id","WME_AutoUR_MSG_Select")
+						  .attr("title","Select Message")
+						  .css("width","100%")
+						  .change(WMEAutoUR.changeMessage)
+						  .append("<option>-----</option>")
+
+			$(MainDIV_right).append(select);
+			WMEAutoUR.createMsgSelect(select);
+
+			return MainDIV_right;
+		}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//----------------  END Create floating UI  --------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.6.1
+		 */
+		WMEAutoUR.createMsgSelect = function(select) {
+			console.info("WME-AutoUR: Create Select");
+
+			$.each(WMEAutoUR.options['names'],function(i,v) {
+				if(v) {
+					var opt = $('<option>')
+					$(opt).attr('value',i);
+					$(opt).html(v);
+					$(select).append(opt);
+					//console.info(v);
+				}
+			});
+		}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
 
 		/**
 		 *@since version 0.0.1
@@ -495,24 +553,6 @@ try {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 0.6.1
-		 */
-		WMEAutoUR.createMsgSelect = function() {
-			console.info("WME-AutoUR: Create Select");
-
-			$.each(WMEAutoUR.options['names'],function(i,v) {
-				if(v) {
-					var opt = $('<option>')
-					$(opt).attr('value',i);
-					$(opt).html(v);
-					$("#WME_AutoUR_MSG_Select").append(opt);
-					//console.info(v);
-				}
-			});
-		}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-		/**
 		 *@since version 0.7.2
 		 */
 		WMEAutoUR.showDevInfo = function() {
@@ -613,4 +653,26 @@ wme_auto_ur_bootstrap();
 		window.setTimeout (UR2T_init, 500 );
 		 return ;
 	}
+*/
+
+
+
+
+// ------- MAIN DIV CSS  ------- //
+//var WME_AutoUR_main_right_css = '.WME_AutoUR_main_right > * { clear: both; display: block; }';
+//$(WMEAutoUR.MainDIV).append($('<style>')
+//							.append(WME_AutoUR_main_right_css));
+
+
+//$(WMEEditOverlayMainDIV).append($('<svg id="OpenLayers.Layer.Vector.RootContainer_336_svgRoot" style="display: block;" width="1339" height="309" viewBox="0 0 1339 309"></svg>').append(WMEEditOverlay.createPolyline));
+//$(WMEEditOverlayMainDIV).append(WMEEditOverlay.createPolyline);
+
+
+// MAP VIEW SIZE
+/*
+			var WMEAutoURViewport = Waze.map.getExtent();
+			var WMEAutoURViewTop = WMEAutoURViewport.top;
+			var WMEAutoURViewBottom = WMEAutoURViewport.bottom;
+			var WMEAutoURViewLeft = WMEAutoURViewport.left;
+			var WMEAutoURViewRight = WMEAutoURViewport.right;
 */
