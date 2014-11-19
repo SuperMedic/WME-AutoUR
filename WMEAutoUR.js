@@ -5,15 +5,16 @@
 // @include     https://www.waze.com/editor/*
 // @include     https://www.waze.com/*editor/*
 // @include     https://editor-beta.waze.com/*editor/*
-// @version     0.7.5
+// @version     0.8.0
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
-// @downloadURL https://greasyfork.org/scripts/6508-wme-autour/code/WME%20AutoUR.user.js
 // ==/UserScript==
 
 
 /* Changelog
+ * 0.8.1 - Cleaned up code and better checking of waze initialization
+ * 0.8.0 - Added Google Chrome support
  * 0.7.5 - added @downloadURL
  * 0.7.4 - Updated webpage includes where script is run
  * 0.7.3 - Updated @since comments
@@ -79,7 +80,7 @@ function WMEAutoUR_init() {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-WMEAutoUR.version = '0.7.5';
+	WMEAutoUR.version = '0.7.5';
 
 
 // Feature detect + local reference
@@ -107,33 +108,15 @@ try {
 		 */
 		WMEAutoUR.init = function() {
 
-			// --- Setup Options --- //
-			WMEAutoUR.options = {};
+
+
+	// --- Setup Options --- //
+	WMEAutoUR.options = {};
+	WMEAutoUR.options['name'] = 'test';
 
 			// --- Load Settings --- //
 			WMEAutoUR.loadSettings();
 
-			// --- Setup Defaults --- //
-			var names = [];
-			names[6] = "Incorrect turn";
-			names[7] = "Incorrect address";
-			names[8] = "Incorrect route";
-			names[9] = "Missing roundabout";
-			names[10] = "General error";
-			names[11] = "Turn not allowed";
-			names[12] = "Incorrect junction";
-			names[13] = "Missing bridge overpass";
-			names[14] = "Wrong driving direction";
-			names[15] = "Missing exit";
-			names[16] = "Missing road";
-
-			// --- Load Defaults --- //
-			if(!WMEAutoUR.options['names']) {
-				WMEAutoUR.options['names'] = names;
-			}
-			if(!WMEAutoUR.options['messages']) {
-				WMEAutoUR.options['messages'] = names;
-			}
 
 			console.info("WME-AutoUR: starting (init.init)");
 			//add the buttons to the chat title bar to hide/show user list and max and min
@@ -424,7 +407,7 @@ try {
 			console.info("WME-AutoUR: Save Settings");
 
 			console.info("WME-AutoUR: " + JSON.stringify(WMEAutoUR.options));
-			AURstorage.setItem('WME_AutoUR', JSON.stringify(WMEAutoUR.options));
+			localStorage.setItem('WME_AutoUR', JSON.stringify(WMEAutoUR.options));
 		}
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -432,8 +415,33 @@ try {
 		 *@since version 0.4.2
 		 */
 		WMEAutoUR.loadSettings = function() {
+
 			console.info("WME-AutoUR: Load Settings");
-			WMEAutoUR.options = JSON.parse(AURstorage.getItem('WME_AutoUR'));
+			var newOpts = JSON.parse(localStorage.getItem('WME_AutoUR'));
+
+            // --- Setup Defaults --- //
+            console.info("WME-AutoUR: checking defaults");
+			var names = [];
+			names[6] = "Incorrect turn";
+			names[7] = "Incorrect address";
+			names[8] = "Incorrect route";
+			names[9] = "Missing roundabout";
+			names[10] = "General error";
+			names[11] = "Turn not allowed";
+			names[12] = "Incorrect junction";
+			names[13] = "Missing bridge overpass";
+			names[14] = "Wrong driving direction";
+			names[15] = "Missing exit";
+			names[16] = "Missing road";
+
+			// --- Load Defaults --- //
+			if(!newOpts) {
+				WMEAutoUR.options['names'] = names;
+				WMEAutoUR.options['messages'] = names;
+            } else {
+                WMEAutoUR.options = newOpts;
+            }
+            console.info("WME-AutoUR: checking defaults... done");
 		}
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -528,7 +536,7 @@ try {
 			try {
 				//if ("undefined" != typeof unsafeWindow.W.model.chat.rooms._events.listeners.add[0].obj.userPresenters[unsafeWindow.Waze.model.loginManager.user.id] ) {
 				if ("undefined" != typeof Waze.map ) {
-					console.info("WME-AutoUR ready to go");
+                    console.info("WME-AutoUR: ready to go");
 					WMEAutoUR.init()
 				} else {
 					console.info("WME-AutoUR: waiting for WME to load...");
@@ -552,3 +560,57 @@ try {
 
 // then at the end of your script, call the bootstrap to get things started
 wme_auto_ur_bootstrap();
+
+
+/*
+
+	 // object needed Waze
+	Waze //
+	if ( typeof (unsafeWindow.Waze) == ' undefined ' ) {
+		UR2T_addLog ( 1 , ' error ' , ' unsafeWindow.Waze NOK ' , unsafeWindow.Waze);
+		window.setTimeout (UR2T_init, 500 );
+		 return ;
+	}
+	UR2T_Waze = unsafeWindow.Waze;
+	Waze.updateRequestsControl //
+	if ( typeof (UR2T_Waze.updateRequestsControl) == ' undefined ' ) {
+		UR2T_addLog ( 1 , ' error ' , ' UR2T_Waze.updateRequestsControl NOK ' , UR2T_Waze.updateRequestsControl);
+		window.setTimeout (UR2T_init, 500 );
+		 return ;
+	}
+	UR2T_updateRequestsControl = UR2T_Waze.updateRequestsControl;
+	Waze.model //
+	if ( typeof (UR2T_Waze.model) == ' undefined ' ) {
+		UR2T_addLog ( 1 , ' error ' , ' UR2T_Waze.model NOK ' , UR2T_Waze.model);
+		window.setTimeout (UR2T_init, 500 );
+		 return ;
+	}
+	UR2T_Waze_model = UR2T_Waze.model;
+	Waze.model.updateRequestSessions //
+	if ( typeof (UR2T_Waze_model.updateRequestSessions) == ' undefined ' ) {
+		UR2T_addLog ( 1 , ' error ' , ' UR2T_Waze_model.mapUpdateRequests NOK ' , UR2T_Waze_model.updateRequestSessions);
+		window.setTimeout (UR2T_init, 500 );
+		 return ;
+	}
+	UR2T_model_updateRequestSessions = UR2T_Waze_model.updateRequestSessions;
+	Waze.model.mapUpdateRequests //
+	if ( typeof (UR2T_Waze_model.mapUpdateRequests) == ' undefined ' ) {
+		UR2T_addLog ( 1 , ' error ' , ' UR2T_Waze_model.mapUpdateRequests NOK ' , UR2T_Waze_model.mapUpdateRequests);
+		window.setTimeout (UR2T_init, 500 );
+		 return ;
+	}
+	UR2T_model_mapUpdateRequests = UR2T_Waze_model.mapUpdateRequests;
+	Waze.loginManager //
+	if ( typeof (UR2T_Waze.loginManager) == ' undefined ' ) {
+		UR2T_addLog ( 1 , ' error ' , ' UR2T_Waze.loginManager NOK ' , UR2T_Waze.loginManager);
+		window.setTimeout (UR2T_init, 500 );
+		 return ;
+	}
+	UR2T_Waze_loginManager = UR2T_Waze.loginManager;
+	Waze.loginManager.user //
+	if ( typeof (UR2T_Waze_loginManager.user) == ' undefined ' ) {
+		UR2T_addLog ( 1 , ' error ' , ' UR2T_Waze_loginManager.user NOK ' , UR2T_Waze_loginManager.user);
+		window.setTimeout (UR2T_init, 500 );
+		 return ;
+	}
+*/
