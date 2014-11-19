@@ -81,7 +81,7 @@ function WMEAutoUR_init() {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-	WMEAutoUR.version = '0.8.2';
+	WMEAutoUR.version = '0.9.0';
 
 
 // Feature detect + local reference
