@@ -17,10 +17,8 @@ YMMV ;)
 
 
 ## Changelog ##
-0.9.0 - Added support for manually choosing UR
-
-0.8.2 - Removed auto UR find
-
+0.9.0 - Added support for manually choosing UR  
+0.8.2 - Removed auto UR find  
 0.8.0 - Added Google Chrome support
 
 0.7.4 - Updated webpage includes where script is run
