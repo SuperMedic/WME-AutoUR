@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.9.0
+// @version     0.9.5
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -11,6 +11,7 @@
 
 
 /* Changelog
+ * 0.9.5 - Code clairity rewrite
  * 0.9.0 - Added support for manually choosing UR
  * 0.8.3 - Organized code
  * 0.8.2 - Removed auto UR find
@@ -59,288 +60,155 @@ function wme_auto_ur_bootstrap() {
 		} ) ();
 	}
 	/* begin running the code! */
-
-
-	WMEAutoUR_init();
+	WMEAutoUR_Create();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
-
-
+//----------------------  WMEAutoUR FUNCTIONS  -----------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
 /**
- *@since version 0.0.1
+ *@since version 0.10.0
  */
-function WMEAutoUR_init() {
-    console.info("WME-AutoUR: starting (init)");
-    WMEAutoUR =  {
-        last: new Array(),
-        isLast: false,
-        isLSsupported: false,
-        zoom: false
-    };
+function WMEAutoUR_Create() {
+	WMEAutoUR = {};
+	WMEAutoUR.version = '0.9.5';
 
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-	WMEAutoUR.version = '0.9.0';
-
-
-// Feature detect + local reference
-/**
- *@since version 0.4.0
- *do i even need this
- *### REVIEW ###
- */
-var AURstorage,
-    fail,
-    uid;
-try {
-  uid = new Date;
-  (AURstorage = window.localStorage).setItem(uid, uid);
-  fail = AURstorage.getItem(uid) != uid;
-  AURstorage.removeItem(uid);
-  fail && (AURstorage = false);
-} catch(e) {}
-
-
-		/**
-		 *@since version 0.0.1
-		 */
-		WMEAutoUR.init = function() {
-
-			// --- Setup Options --- //
-			WMEAutoUR.options = {};
-
-			// --- Load Settings --- //
-			WMEAutoUR.loadSettings();
-
-			console.info("WME-AutoUR: starting (init.init)");
-
-			WMEAutoUR.createFloatingUI();
-
-			WMEAutoUR.index = 0;
-
-// @since 0.8.2 - Turned off auto UR finding
-			//WMEAutoUR.getIDs();
-
-			window.setInterval(WMEAutoUR.getActiveUR,250);
-
-			$(document).tooltip();
-
-		}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-//----------------  Create floating UI  ------------------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-		/**
-		 *@since version 0.8.1
-		 */
-		WMEAutoUR.createFloatingUI = function() {
-			console.info("WME-AutoUR: create floating UI");
-
-			// See if the div is already created //
-			if ($("#WME_AutoUR_main").length==0) {
-			  var MainDIV = WMEAutoUR.createFloatingMainDiv();
-			  $("#panels-container").append(MainDIV);
-
-			  $(MainDIV).append(WMEAutoUR.createFloatingLeftSubDiv);
-			  $(MainDIV).append(WMEAutoUR.createFloatingRightSubDiv);
-
-			  console.info("WME-AutoUR: Loaded Pannel");
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//-------------  ##########  START CODE FUNCTION ##########  ---------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	/**
+	 *@since version 0.0.1
+	 */
+	WMEAutoUR.startcode = function () {
+		console.info("WME-AutoUR: startcode");
+		// Check if WME is loaded, if not, waiting a moment and checks again. if yes init WMEChatResize
+		try {
+			//if ("undefined" != typeof unsafeWindow.W.model.chat.rooms._events.listeners.add[0].obj.userPresenters[unsafeWindow.Waze.model.loginManager.user.id] ) {
+			if ("undefined" != typeof Waze.map ) {
+				console.info("WME-AutoUR: ready to go");
+				WMEAutoUR.init()
+			} else {
+				console.info("WME-AutoUR: waiting for WME to load...");
+				setTimeout(WMEAutoUR.startcode, 1000);
 			}
-
-			//--- Drag me Bishes!! ---//
-			$( "#WME_AutoUR_main" ).draggable();
+		} catch(err) {
+			console.info("WME-AutoUR: waiting for WME to load...(caught in an error)");
+			console.info("WME-AutoUR: Error:"+err);
+			setTimeout(WMEAutoUR.startcode, 1000);
 		}
+	}
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//-------------  ##########  START CODE FUNCTION ##########  ---------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-		/**
-		 *@since version 0.8.1
-		 */
-		// ---------- MAIN DIV --------- //
-		WMEAutoUR.createFloatingMainDiv = function() {
-			console.info("WME-AutoUR: create main div ");
-
-			var MainDIV = $('<div>').css("background","rgba(117, 79, 150, 0.85)");
-			$(MainDIV).attr("id","WME_AutoUR_main");
-			//$(WMEAutoUR.MainDIV).css("padding","10px");
-			$(MainDIV).css("color","#FFFFFF");
-			$(MainDIV).css("border-radius","10px");
-			$(MainDIV).css("z-index","1000");
-			$(MainDIV).css("position","absolute");
-			$(MainDIV).css("display","block");
-
-			return MainDIV;
-		}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-		/**
-		 *@since version 0.8.1
-		 */
-		WMEAutoUR.createFloatingLeftSubDiv = function() {
-			console.info("WME-AutoUR: create L sub div");
-
-			MainDIV_left = $('<div>').addClass('WME_AutoUR_main_left')
-												.css("padding","10px")
-												.css("float","left");
-
-			// ------- MAIN DIV LEFT  ------- //
-			$(MainDIV_left).append($("<div>")
-							.css("width","100%")
-							.css("text-align","center")
-							.css("background-color","#000000")
-							.css("border-radius","5px")
-							.css("padding","3px")
-							.css("margin-bottom","3px")
-							.html("WME-AutoUR " + WMEAutoUR.version)
-							.dblclick(WMEAutoUR.showDevInfo)
-							.attr("title","Click for Development Info"));
-			$(MainDIV_left).append($("<button>Prev</button>")
-							.click(WMEAutoUR.prevUR)
-							.attr("title","Previous UR"));
-			$(MainDIV_left).append($("<button>Next</button>")
-							.click(WMEAutoUR.nextUR)
-							.attr("title","Next UR"));
-			$(MainDIV_left).append($("<button>Tools</button>")
-							.click(WMEAutoUR.showHideTools)
-							.attr("title","Show/Hide Tools Pannel"));
-
-			$(MainDIV_left).append($("<span id='WME_AutoUR_Info'>")
-							//.css("float","right")
-							.css("text-align","left")
-							.css("display","block")
-							.css("clear","both"));
-
-			$(MainDIV_left).append($("<span id='WME_AutoUR_Count'>")
-							.css("text-align","right")
-							.css("display","block")
-							.css("clear","both")
-							.css("float","right")
-							.css("padding","3px")
-							.css("background-color","#000000")
-							.css("border-radius","5px")
-							.html("?/?")
-							.dblclick(WMEAutoUR.getIDs)
-							.attr("title","Double click to reload list of URs")
-							);
-
-			return MainDIV_left;
-		}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-		/**
-		 *@since version 0.8.1
-		 */
-		// ------- MAIN DIV RIGHT  ------- //
-		WMEAutoUR.createFloatingRightSubDiv = function() {
-			console.info("WME-AutoUR: create R sub div");
-
-			MainDIV_right = $('<div>').addClass('WME_AutoUR_main_right')
-									  .css("padding","10px")
-									  .css("width","228px")
-									  .css("text-align","center")
-									  .css("float","right");
+	/**
+	 *@since version 0.0.1
+	 */
+	WMEAutoUR.init = function() {
+		// --- Setup Options --- //
+		WMEAutoUR.options = {};
+		// --- Load Settings --- //
+		WMEAutoUR.Settings.Load();
+		console.info("WME-AutoUR: starting (init.init)");
+		// --- Create Floating UI --- //
+		WMEAutoUR_Create_FloatUI();
+	// @since 0.8.2 - Turned off auto UR finding
+		//WMEAutoUR.index = 0;
+		//WMEAutoUR.getIDs();
+		window.setInterval(WMEAutoUR.UR.getActive,250);
+		window.setInterval(WMEAutoUR.Settings.Save,30000);
+		$(document).tooltip();
+	}
 
 
-			$(MainDIV_right).append($("<button>Insert</button>")
-							.click(WMEAutoUR.insertComment)
-							.css("float","left")
-							.attr("title","Insert Comment"));
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//----------------------  MANUAL UR FUNCTIONS  -----------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	/**
+	 *@since 0.10.0
+	 */
+	WMEAutoUR.UR = {
 
-			$(MainDIV_right).append($("<button>Save This</button>")
-							.click(WMEAutoUR.saveMessage)
-							.attr("title","Save Current Comment"));
-
-			$(MainDIV_right).append($("<button>Save All</button>")
-							.click(WMEAutoUR.saveSettings)
-							//.css("clear","both")
-							.css("float","right")
-							//.css("margin-top","5px")
-							.attr("title","Save All Comments/Settings"));
-
-			$(MainDIV_right).append($("<textarea>")
-							.attr("id","WME_AutoUR_MSG_default_comment")
-							.css("width","100%")
-							.css("height","150px")
-							.attr("title","Default Comment"));
-
-			var select = $("<select>")
-						  .attr("id","WME_AutoUR_MSG_Select")
-						  .attr("title","Select Message")
-						  .css("width","100%")
-						  .change(WMEAutoUR.changeMessage)
-						  .append("<option>-----</option>")
-
-			$(MainDIV_right).append(select);
-			WMEAutoUR.createMsgSelect(select);
-
-			return MainDIV_right;
-		}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-//----------------  END Create floating UI  --------------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-//----------------  UNIVERSAL UI FUNCTIONS  -------------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------------------------------------------
-		/**
-		 *@since version 0.6.1
-		 */
-		WMEAutoUR.createMsgSelect = function(select) {
-			console.info("WME-AutoUR: Create Select");
-
-			$.each(WMEAutoUR.options['names'],function(i,v) {
-				if(v) {
-					var opt = $('<option>')
-					$(opt).attr('value',i);
-					$(opt).html(v);
-					$(select).append(opt);
-					//console.info(v);
-				}
-			});
-		}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-//----------------  END UNIVERSAL UI FUNCTIONS  ----------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------  MANUAL UR FUNCTIONS  -----------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------------------------------------------
 
 		/**
 		 *@since version 0.9.0
 		 */
-		WMEAutoUR.getActiveUR = function() {
+		getActive: function() {
 			console.info("WME-AutoUR: getActiveUR");
 
-			var urID = Waze.updateRequestsControl.currentRequest.attributes.id;
 
-			if(Waze.updateRequestsControl.currentRequest && (WMEAutoUR.activeUR != urID)) {
-				WMEAutoUR.activeUR = urID;
-				WMEAutoUR.getInfo();
-				WMEAutoUR.changeMessage(Waze.updateRequestsControl.currentRequest.attributes.type);
+
+			if(Waze.updateRequestsControl.currentRequest) {
+				var urID = Waze.updateRequestsControl.currentRequest.attributes.id;
+				if((WMEAutoUR.activeUR != urID)) {
+					WMEAutoUR.activeUR = urID;
+					$('span[id="WME_AutoUR_Info"]').html(WMEAutoUR.UR.getInfo());
+					WMEAutoUR.Messages.Change(Waze.updateRequestsControl.currentRequest.attributes.type);
+				}
+			}
+		},
+
+		/**
+		 *@since version 0.2.0
+		 */
+		getInfo: function() {
+			console.info('WME-AutoUR: UR Info');
+
+			var error_update_user_id = '-1'; //  (user ID)
+			var error_update_user = 'Reporter'; //  (user ID)
+
+			var now_time = new Date().getTime(); // (error number)
+			var error_num = Waze.updateRequestsControl.currentRequest.attributes.type; // (error number)
+			var error_txt = Waze.updateRequestsControl.currentRequest.attributes.typeText; // (error text)
+			var error_comments = Waze.updateRequestsControl.currentRequest.attributes.hasComments; // (are there comments?)
+			var error_x = Waze.updateRequestsControl.currentRequest.attributes.geometry.y; //  (y coord)
+			var error_y = Waze.updateRequestsControl.currentRequest.attributes.geometry.x; //  (x coord)
+			var error_drive_date_obj = new Date(Waze.updateRequestsControl.currentRequest.attributes.driveDate); //  (created usec)
+			var error_update_date_obj = new Date(Waze.updateRequestsControl.currentRequest.attributes.updatedOn); //  (updated usec)
+			if(Waze.updateRequestsControl.currentRequest.attributes.updatedBy) {
+				error_update_user_id = Waze.updateRequestsControl.currentRequest.attributes.updatedBy; //  (user ID)
+				error_update_user = Waze.model.users.get(error_update_user_id).userName; //  (user ID)
+			} else {
+				error_update_user_id = '-1'; //  (user ID)
+				error_update_user = 'Reporter'; //  (user ID)
 			}
 
+
+			var info_txt = '';
+			info_txt = info_txt+"Error: "+error_txt+" ("+error_num+")<br>";
+			//info_txt = info_txt+"Comment: "+error_comments+"<br>";
+			//info_txt = info_txt+"X: "+error_x+"<br>";
+			//info_txt = info_txt+"Y: "+error_y+"<br>";
+
+			var error_update_date = Math.floor(((((now_time - error_update_date_obj.getTime())/1000)/60)/60)/24) + " days (" + error_update_date_obj.toLocaleString() +  ")";
+			var error_drive_date = Math.floor(((((now_time - error_drive_date_obj.getTime())/1000)/60)/60)/24) + " days (" + error_drive_date_obj.toLocaleString() +  ")";
+
+			info_txt = info_txt+"Created: "+error_drive_date+"<br>";
+			info_txt = info_txt+"Update: "+error_update_date+"<br>";
+			info_txt = info_txt+"User: "+error_update_user+"<br>";
+			//info_txt = info_txt+"UserID: "+error_update_user_id+"<br>";
+
+			//$('span[id="WME_AutoUR_Info"]').html(info_txt);
+			return info_txt;
 		}
+	}
 
-//--------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------  END MANUAL UR FUNCTIONS  -------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//----------------------  END MANUAL UR FUNCTIONS  -------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
 
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------  AUTO UR FUNCTIONS  -------------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//----------------------  AUTO UR FUNCTIONS  -------------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	WMEAutoUR.Auto = {
 		/**
 		 *@since version 0.1.0
 		 */
-		WMEAutoUR.getIDs = function() {
+		getIDs: function() {
 			console.info("WME-AutoUR: Getting UR IDs");
 			WMEAutoUR.UR_Objs = Waze.model.mapUpdateRequests.objects;
 			WMEAutoUR.UR_IDs = [];
@@ -359,146 +227,82 @@ try {
 			console.info('WME-AutoUR: Count Displayed');
 			WMEAutoUR.firstUR();
 			return;
-		}
+		},
 
-//--------------------------------------------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
 		 *@since version 0.1.0
 		 */
-		WMEAutoUR.firstUR = function() {
+		firstUR: function() {
 			WMEAutoUR.gotoURByIndex(WMEAutoUR.index);
-		}
+		},
 
-//--------------------------------------------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
 		 *@since version 0.1.0
 		 */
-		WMEAutoUR.nextUR = function() {
+		nextUR: function() {
 			console.info('WME-AutoUR: nextUR');
 			if((WMEAutoUR.index+1) < WMEAutoUR.UR_len) {
 				WMEAutoUR.gotoURByIndex(++WMEAutoUR.index);
 			}
-		}
+		},
 
-//--------------------------------------------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
 		 *@since version 0.1.0
 		 */
-		WMEAutoUR.prevUR = function() {
+		prevUR: function() {
 			console.info('WME-AutoUR: prevUR');
 			if(WMEAutoUR.index > 0) {
 				WMEAutoUR.gotoURByIndex(--WMEAutoUR.index);
 			}
-		}
-//--------------------------------------------------------------------------------------------------------------------------------------------
+		},
+		//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
 		 *@since version 0.1.0
 		 */
-		WMEAutoUR.gotoURByIndex = function(URindex) {
+		gotoURByIndex: function(URindex) {
 			console.info("WME-AutoUR: gotoURByIndex");
 			WMEAutoUR.curURid = WMEAutoUR.UR_IDs[URindex];
 			WMEAutoUR.gotoURById(WMEAutoUR.curURid);
 			return;
 		}
+	}
 
-//--------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------  END AUTO UR FUNCTIONS  ---------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//----------------------  END AUTO UR FUNCTIONS  ---------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------  UNIVERSAL UR FUNCTIONS  --------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------------------------------------------
-		/**
-		 *@since version 0.2.0
-		 */
-		WMEAutoUR.getInfo = function() {
-			console.info('WME-AutoUR: UR Info');
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//----------------------  STORAGE/SETTINGS/MESSAGES FUNCTIONS  -------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	/**
+	 *@since 0.10.0
+	 */
+	WMEAutoUR.Settings = {
 
-			var now_time = new Date().getTime(); // (error number)
-			var error_num = Waze.updateRequestsControl.currentRequest.attributes.type; // (error number)
-			var error_txt = Waze.updateRequestsControl.currentRequest.attributes.typeText; // (error text)
-			var error_comments = Waze.updateRequestsControl.currentRequest.attributes.hasComments; // (are there comments?)
-			var error_x = Waze.updateRequestsControl.currentRequest.attributes.geometry.y; //  (y coord)
-			var error_y = Waze.updateRequestsControl.currentRequest.attributes.geometry.x; //  (x coord)
-			var error_drive_date_obj = new Date(Waze.updateRequestsControl.currentRequest.attributes.driveDate); //  (created usec)
-			var error_update_date_obj = new Date(Waze.updateRequestsControl.currentRequest.attributes.updatedOn); //  (updated usec)
-			if(Waze.updateRequestsControl.currentRequest.attributes.updatedBy) {
-				var error_update_user_id = Waze.updateRequestsControl.currentRequest.attributes.updatedBy; //  (user ID)
-				var error_update_user = Waze.model.users.get(error_update_user_id).userName; //  (user ID)
-			} else {
-				var error_update_user_id = '-1'; //  (user ID)
-				var error_update_user = 'Reporter'; //  (user ID)
-			}
-
-
-			var info_txt = '';
-			info_txt = info_txt+"Error: "+error_txt+" ("+error_num+")<br>";
-			//info_txt = info_txt+"Comment: "+error_comments+"<br>";
-			//info_txt = info_txt+"X: "+error_x+"<br>";
-			//info_txt = info_txt+"Y: "+error_y+"<br>";
-
-			var error_update_date = Math.floor(((((now_time - error_update_date_obj.getTime())/1000)/60)/60)/24) + " days (" + error_update_date_obj.toLocaleString() +  ")";
-			var error_drive_date = Math.floor(((((now_time - error_drive_date_obj.getTime())/1000)/60)/60)/24) + " days (" + error_drive_date_obj.toLocaleString() +  ")";
-
-			info_txt = info_txt+"Created: "+error_drive_date+"<br>";
-			info_txt = info_txt+"Update: "+error_update_date+"<br>";
-			info_txt = info_txt+"User: "+error_update_user+"<br>";
-			//info_txt = info_txt+"UserID: "+error_update_user_id+"<br>";
-
-			$('span[id="WME_AutoUR_Info"]').html(info_txt);
-		}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-		/**
-		 *@since version 0.3.0
-		 */
-		WMEAutoUR.insertComment = function() {
-			console.info("WME-AutoUR: Insert Comment");
-			$('#update-request-panel textarea').html($("#WME_AutoUR_MSG_default_comment").val());
-		}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-		/**
-		 *@since version 0.1.0
-		 */
-		WMEAutoUR.gotoURById = function(URId) {
-			console.info("WME-AutoUR: gotoURById" + URId);
-			Waze.updateRequestsControl.selectById(URId);
-			var x = Waze.updateRequestsControl.currentRequest.attributes.geometry.x;
-			var y = Waze.updateRequestsControl.currentRequest.attributes.geometry.y;
-			Waze.map.setCenter([x,y],3);
-			WMEAutoUR.getInfo();
-			WMEAutoUR.changeMessage(Waze.updateRequestsControl.currentRequest.attributes.type);
-			$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.index+1)+"/"+WMEAutoUR.UR_len);
-			return;
-		}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------  END UNIVERSAL UR FUNCTIONS  ----------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
 		 *@since version 0.4.1
 		 */
-		WMEAutoUR.saveSettings = function() {
+		Save: function() {
 			console.info("WME-AutoUR: Save Settings");
 
 			console.info("WME-AutoUR: " + JSON.stringify(WMEAutoUR.options));
 			localStorage.setItem('WME_AutoUR', JSON.stringify(WMEAutoUR.options));
-		}
+		},
 
-//--------------------------------------------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
 		 *@since version 0.4.2
 		 */
-		WMEAutoUR.loadSettings = function() {
+		Load: function() {
 
 			console.info("WME-AutoUR: Load Settings");
 			var newOpts = JSON.parse(localStorage.getItem('WME_AutoUR'));
 
-            // --- Setup Defaults --- //
-            console.info("WME-AutoUR: checking defaults");
+			// --- Setup Defaults --- //
+			console.info("WME-AutoUR: checking defaults");
 			var names = [];
 			names[6] = "Incorrect turn";
 			names[7] = "Incorrect address";
@@ -514,29 +318,35 @@ try {
 
 			// --- Load Defaults --- //
 			if(!newOpts) {
-				WMEAutoUR.options['names'] = names;
-				WMEAutoUR.options['messages'] = names;
-            } else {
-                WMEAutoUR.options = newOpts;
-            }
-            console.info("WME-AutoUR: checking defaults... done");
+				WMEAutoUR.options.names = names;
+				WMEAutoUR.options.messages = names;
+			} else {
+				WMEAutoUR.options = newOpts;
+			}
+			console.info("WME-AutoUR: checking defaults... done");
 		}
+	};
 
-//--------------------------------------------------------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	/**
+	 *@since 0.10.0
+	 */
+	WMEAutoUR.Messages = {
+		//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
 		 *@since version 0.5.0
 		 */
-		WMEAutoUR.saveMessage = function() {
+		Save: function() {
 			console.info("WME-AutoUR: Set Message: " + $("#WME_AutoUR_MSG_default_comment").val());
-			WMEAutoUR.options['messages'][$("#WME_AutoUR_MSG_Select").val()] = $("#WME_AutoUR_MSG_default_comment").val();
+			WMEAutoUR.options.messages[$("#WME_AutoUR_MSG_Select").val()] = $("#WME_AutoUR_MSG_default_comment").val();
 			console.info("WME-AutoUR: " + JSON.stringify(WMEAutoUR.options));
-		}
+		},
 
-//--------------------------------------------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
 		 *@since version 0.5.0
 		 */
-		WMEAutoUR.changeMessage = function() {
+		Change: function() {
 			console.info("WME-AutoUR: changeMessage");
 
 			var index;
@@ -550,53 +360,281 @@ try {
 			if(index == null) {
 				index = $("#WME_AutoUR_MSG_Select").val();
 			}
-			console.info("WME-AutoUR: Change Message: " + WMEAutoUR.options['messages'][index]);
-			$("#WME_AutoUR_MSG_default_comment").val(WMEAutoUR.options['messages'][index]);
+			console.info("WME-AutoUR: Change Message: " + WMEAutoUR.options.messages[index]);
+			$("#WME_AutoUR_MSG_default_comment").val(WMEAutoUR.options.messages[index]);
 
 			try {
 				if($("#update-request-panel textarea").length!=0) {
 					console.info("WME-AutoUR check textarea != 0");
-					WMEAutoUR.insertComment();
+					WMEAutoUR.Messages.Insert();
 				} else {
 					console.info("WME-AutoUR check textarea == 0");
-					setTimeout(WMEAutoUR.insertComment, 1000);
+					setTimeout(WMEAutoUR.Messages.Insert, 1000);
 				}
 			} catch(err) {
 				console.info("WME-AutoUR: Error:"+err);
 			}
-		}
+		},
 
-//--------------------------------------------------------------------------------------------------------------------------------------------
-//------------------------  OTHER FUNCTIONS  -------------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------------------------------------------
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 0.7.2
+		 *@since version 0.3.0
 		 */
-		WMEAutoUR.showDevInfo = function() {
-			var info_txt = '';
-			info_txt = info_txt + 'Created by: <b>SuperMedic</b><br>';
-			info_txt = info_txt + 'Beta Testers:<br>';
-			info_txt = info_txt + '<b>Stephenr1966</b><br>';
-			$('span[id="WME_AutoUR_Info"]').html(info_txt);
+		Insert: function() {
+			console.info("WME-AutoUR: Insert Comment");
+			$('#update-request-panel textarea').html($("#WME_AutoUR_MSG_default_comment").val());
+		}
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//----------------------  END STORAGE/SETTINGS?MESSAGES FUNCTIONS  ---------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//------------------------  OTHER FUNCTIONS  -------------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	/**
+	 *@since version 0.7.2
+	 */
+	WMEAutoUR.showDevInfo = function() {
+		var info_txt = '';
+		info_txt = info_txt + 'Created by: <b>SuperMedic</b><br>';
+		info_txt = info_txt + 'Beta Testers:<br>';
+		info_txt = info_txt + '<b>Stephenr1966</b><br>';
+		info_txt = info_txt + '<b>SeekingSerenity</b><br>';
+		$('span[id="WME_AutoUR_Info"]').html(info_txt);
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 *@since version 0.3.1
+	 */
+	WMEAutoUR.showHideTools = function() {
+		console.info("WME-AutoUR: Show/Hide Tools");
+		switch($("#WME_AutoUR_main .WME_AutoUR_main_right").css("display")) {
+			case 'none': 	$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","block");	break;
+			case 'block':	$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","none");		break;
+			default:		$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","block");	break;
+		}
+	}
+
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	/**
+	 *@since version 0.1.0
+	 */
+	WMEAutoUR.gotoURById = function(URId) {
+		console.info("WME-AutoUR: gotoURById" + URId);
+		Waze.updateRequestsControl.selectById(URId);
+		var x = Waze.updateRequestsControl.currentRequest.attributes.geometry.x;
+		var y = Waze.updateRequestsControl.currentRequest.attributes.geometry.y;
+		Waze.map.setCenter([x,y],3);
+		WMEAutoUR.getInfo();
+		WMEAutoUR.changeMessage(Waze.updateRequestsControl.currentRequest.attributes.type);
+		$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.index+1)+"/"+WMEAutoUR.UR_len);
+		return;
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//------------------------  END OTHER FUNCTIONS  ---------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+
+	WMEAutoUR.startcode();
+}
+
+
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------  WMEAutoUR FUNCTIONS  -----------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//----------------  Create floating UI  ------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+
+function WMEAutoUR_Create_FloatUI() {
+	WMEAutoUR_FloatingUI = {};
+	/**
+	 *@since version 0.8.1
+	 */
+	WMEAutoUR_FloatingUI.init = function() {
+		console.info("WME-WMEAutoUR_FloatingUI: create floating UI");
+
+		var MainDIV = WMEAutoUR_FloatingUI.MainDIV();
+
+		$(MainDIV).append(WMEAutoUR_FloatingUI.LeftSubDIV);
+		$(MainDIV).append(WMEAutoUR_FloatingUI.RightSubDIV);
+
+		// See if the div is already created //
+		if ($("#WME_AutoUR_main").length==0) {
+			$("#panels-container").append(MainDIV);
+			console.info("WME-WMEAutoUR_FloatingUI: Loaded Pannel");
 		}
 
-//--------------------------------------------------------------------------------------------------------------------------------------------
+		//--- Drag me Bishes!! ---//
+		$("#WME_AutoUR_main").draggable();
+	}
 
-		/**
-		 *@since version 0.3.1
-		 */
-		WMEAutoUR.showHideTools = function() {
-			console.info("WME-AutoUR: Show/Hide Tools");
-			switch($("#WME_AutoUR_main .WME_AutoUR_main_right").css("display")) {
-				case 'none': 	$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","block");	break;
-				case 'block':	$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","none");		break;
-				default:		$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","block");	break;
-			}
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 *@since version 0.8.1
+	 */
+	// ---------- MAIN DIV --------- //
+	WMEAutoUR_FloatingUI.MainDIV = function() {
+		console.info("WME-WMEAutoUR_FloatingUI: create main div ");
+
+		var MainDIV = $('<div>').css("background","rgba(117, 79, 150, 0.85)");
+		$(MainDIV).attr("id","WME_AutoUR_main");
+		//$(WMEAutoUR.MainDIV).css("padding","10px");
+		$(MainDIV).css("color","#FFFFFF");
+		$(MainDIV).css("border-radius","10px");
+		$(MainDIV).css("z-index","1000");
+		$(MainDIV).css("position","absolute");
+		$(MainDIV).css("display","block");
+
+		return MainDIV;
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 *@since version 0.8.1
+	 */
+	WMEAutoUR_FloatingUI.LeftSubDIV = function() {
+		console.info("WME-WMEAutoUR_FloatingUI: create L sub div");
+
+		MainDIV_left = $('<div>').addClass('WME_AutoUR_main_left')
+								  .css("padding","10px")
+								  .css("float","left");
+
+		// ------- MAIN DIV LEFT  ------- //
+		$(MainDIV_left).append($("<div>")
+						.css("width","100%")
+						.css("text-align","center")
+						.css("background-color","#000000")
+						.css("border-radius","5px")
+						.css("padding","3px")
+						.css("margin-bottom","3px")
+						.html("WME-AutoUR " + WMEAutoUR.version)
+						.dblclick(WMEAutoUR.showDevInfo)
+						.attr("title","Click for Development Info"));
+		$(MainDIV_left).append($("<button>Prev</button>")
+						.click(WMEAutoUR.UR.prev)
+						.attr("title","Previous UR"));
+		$(MainDIV_left).append($("<button>Next</button>")
+						.click(WMEAutoUR.UR.next)
+						.attr("title","Next UR"));
+		$(MainDIV_left).append($("<button>Tools</button>")
+						.click(WMEAutoUR.showHideTools)
+						.attr("title","Show/Hide Tools Pannel"));
+
+		$(MainDIV_left).append($("<span id='WME_AutoUR_Info'>")
+						//.css("float","right")
+						.css("text-align","left")
+						.css("display","block")
+						.css("clear","both"));
+
+		$(MainDIV_left).append($("<span id='WME_AutoUR_Count'>")
+						.css("text-align","right")
+						.css("display","block")
+						.css("clear","both")
+						.css("float","right")
+						.css("padding","3px")
+						.css("background-color","#000000")
+						.css("border-radius","5px")
+						.html("?/?")
+						.dblclick(WMEAutoUR.getIDs)
+						.attr("title","Double click to reload list of URs")
+						);
+
+		return MainDIV_left;
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 *@since version 0.8.1
+	 */
+	// ------- MAIN DIV RIGHT  ------- //
+	WMEAutoUR_FloatingUI.RightSubDIV = function() {
+		console.info("WME-WMEAutoUR_FloatingUI: create R sub div");
+
+		MainDIV_right = $('<div>').addClass('WME_AutoUR_main_right')
+								  .css("padding","10px")
+								  .css("width","228px")
+								  .css("text-align","center")
+								  .css("float","right");
+
+
+		$(MainDIV_right).append($("<button>Insert</button>")
+						.click(WMEAutoUR.Messages.Insert)
+						.css("float","left")
+						.attr("title","Insert Comment"));
+
+		$(MainDIV_right).append($("<button>Save This</button>")
+						.click(WMEAutoUR.Messages.Save)
+						.attr("title","Save Current Comment"));
+
+		$(MainDIV_right).append($("<button>Save All</button>")
+						.click(WMEAutoUR.Settings.Save)
+						//.css("clear","both")
+						.css("float","right")
+						//.css("margin-top","5px")
+						.attr("title","Save All Comments/Settings"));
+
+		$(MainDIV_right).append($("<textarea>")
+						.attr("id","WME_AutoUR_MSG_default_comment")
+						.css("width","100%")
+						.css("height","150px")
+						.attr("title","Default Comment"));
+
+		var select = $("<select>")
+					  .attr("id","WME_AutoUR_MSG_Select")
+					  .attr("title","Select Message")
+					  .css("width","100%")
+					  .change(WMEAutoUR.Messages.Change)
+					  .append("<option>-----</option>")
+
+		$(MainDIV_right).append(select);
+		WMEAutoUR_FloatingUI.createSelect(select);
+
+		return MainDIV_right;
+	}
+
+	/**
+	*@since version 0.6.1
+	*/
+	WMEAutoUR_FloatingUI.createSelect = function(select) {
+	console.info("WME-AutoUR: Create Select");
+
+	$.each(WMEAutoUR.options.names,function(i,v) {
+		if(v) {
+			var opt = $('<option>')
+			$(opt).attr('value',i);
+			$(opt).html(v);
+			$(select).append(opt);
+			//console.info(v);
 		}
+	});
+	}
 
+	WMEAutoUR_FloatingUI.init();
+}
 //--------------------------------------------------------------------------------------------------------------------------------------------
-//------------------------  END OTHER FUNCTIONS  ---------------------------------------------------------------------------------------------
+//----------------  END Create floating UI  --------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
 
 
 
@@ -607,54 +645,21 @@ try {
 		/**
 		 *@since version 0.0.1
 		 */
-		WMEAutoUR.transformCoords = function(coords) {
-			console.info("WME-AutoUR: transformCoords");
-			return coords.transform(new OpenLayers.Projection("EPSG:900913"),new OpenLayers.Projection("EPSG:4326"));
-		}
+		//WMEAutoUR.transformCoords = function(coords) {
+		//	console.info("WME-AutoUR: transformCoords");
+		//	return coords.transform(new OpenLayers.Projection("EPSG:900913"),new OpenLayers.Projection("EPSG:4326"));
+		//}
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //----------------  END HELPER FUCNTIONS  ----------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 
-
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//-----------------------  WE HAVE FOUND OUR BOOTS  ------------------------------------------------------------------------------------------
+//-------------------------  NOW LETS PUT THEM ON  -------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
-//-------------  ##########  START CODE FUNCTION ##########  ---------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------------------------------------------
-		/**
-		 *@since version 0.0.1
-		 */
-		WMEAutoUR.startcode = function () {
-			console.info("WME-AutoUR: startcode");
-			// Check if WME is loaded, if not, waiting a moment and checks again. if yes init WMEChatResize
-			try {
-				//if ("undefined" != typeof unsafeWindow.W.model.chat.rooms._events.listeners.add[0].obj.userPresenters[unsafeWindow.Waze.model.loginManager.user.id] ) {
-				if ("undefined" != typeof Waze.map ) {
-                    console.info("WME-AutoUR: ready to go");
-					WMEAutoUR.init()
-				} else {
-					console.info("WME-AutoUR: waiting for WME to load...");
-					setTimeout(WMEAutoUR.startcode, 1000);
-				}
-			} catch(err) {
-				console.info("WME-AutoUR: waiting for WME to load...(caught in an error)");
-				console.info("WME-AutoUR: Error:"+err);
-				setTimeout(WMEAutoUR.startcode, 1000);
-			}
-		}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-		//setTimeout(WMEChatResize.startcode, 5000);
-		WMEAutoUR.startcode();
-
-}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-// then at the end of your script, call the bootstrap to get things started
 wme_auto_ur_bootstrap();
 
 
