@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.9.5
+// @version     0.9.6
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -11,6 +11,7 @@
 
 
 /* Changelog
+ * 0.9.6 - Moved Auto Buttons to bottom
  * 0.9.5 - Code clairity rewrite
  * 0.9.0 - Added support for manually choosing UR
  * 0.8.3 - Organized code
@@ -71,7 +72,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.9.5';
+	WMEAutoUR.version = '0.9.6';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -117,8 +118,7 @@ function WMEAutoUR_Create() {
 		// --- Create Floating UI --- //
 		WMEAutoUR_Create_FloatUI();
 	// @since 0.8.2 - Turned off auto UR finding
-		//WMEAutoUR.index = 0;
-		//WMEAutoUR.getIDs();
+		//WMEAutoUR.Auto.getIDs();
 		window.setInterval(WMEAutoUR.UR.getActive,250);
 		window.setInterval(WMEAutoUR.Settings.Save,30000);
 		$(document).tooltip();
@@ -139,9 +139,6 @@ function WMEAutoUR_Create() {
 		 */
 		getActive: function() {
 			console.info("WME-AutoUR: getActiveUR");
-
-
-
 			if(Waze.updateRequestsControl.currentRequest) {
 				var urID = Waze.updateRequestsControl.currentRequest.attributes.id;
 				if((WMEAutoUR.activeUR != urID)) {
@@ -205,27 +202,31 @@ function WMEAutoUR_Create() {
 	//----------------------  AUTO UR FUNCTIONS  -------------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	WMEAutoUR.Auto = {
+
+		index: 0,
+
 		/**
 		 *@since version 0.1.0
 		 */
 		getIDs: function() {
 			console.info("WME-AutoUR: Getting UR IDs");
-			WMEAutoUR.UR_Objs = Waze.model.mapUpdateRequests.objects;
-			WMEAutoUR.UR_IDs = [];
-			WMEAutoUR.UR_len = 0;
-			for(var e in WMEAutoUR.UR_Objs) {
+			WMEAutoUR.Auto.UR_Objs = Waze.model.mapUpdateRequests.objects;
+			WMEAutoUR.Auto.UR_IDs = [];
+			WMEAutoUR.Auto.UR_len = 0;
+			WMEAutoUR.Auto.index = 0;
+			for(var e in WMEAutoUR.Auto.UR_Objs) {
 				//console.info(e);
-				WMEAutoUR.UR_IDs.push(e);
-				WMEAutoUR.UR_len++;
+				WMEAutoUR.Auto.UR_IDs.push(e);
+				WMEAutoUR.Auto.UR_len++;
 			}
-			console.info("WME-AutoUR: WMEAutoUR.UR_len:"+WMEAutoUR.UR_len);
-			console.info("WME-AutoUR: WMEAutoUR.UR_IDs:"+WMEAutoUR.UR_IDs);
-			console.info("WME-AutoUR: WMEAutoUR.UR_Objs:"+WMEAutoUR.UR_Objs);
-			WMEAutoUR.index = 0;
-			console.info("WME-AutoUR: WMEAutoUR.index:"+WMEAutoUR.index);
-			$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.index+1)+"/"+WMEAutoUR.UR_len)
+			console.info("WME-AutoUR: WMEAutoUR.UR_len:"+WMEAutoUR.Auto.UR_len);
+			console.info("WME-AutoUR: WMEAutoUR.UR_IDs:"+WMEAutoUR.Auto.UR_IDs);
+			console.info("WME-AutoUR: WMEAutoUR.UR_Objs:"+WMEAutoUR.Auto.UR_Objs);
+			WMEAutoUR.Auto.index = 0;
+			console.info("WME-AutoUR: WMEAutoUR.index:"+WMEAutoUR.Auto.index);
+			$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.Auto.index+1)+"/"+WMEAutoUR.Auto.UR_len)
 			console.info('WME-AutoUR: Count Displayed');
-			WMEAutoUR.firstUR();
+			WMEAutoUR.Auto.firstUR();
 			return;
 		},
 
@@ -234,17 +235,17 @@ function WMEAutoUR_Create() {
 		 *@since version 0.1.0
 		 */
 		firstUR: function() {
-			WMEAutoUR.gotoURByIndex(WMEAutoUR.index);
+			WMEAutoUR.Auto.gotoURByIndex(WMEAutoUR.Auto.index);
 		},
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
 		 *@since version 0.1.0
 		 */
-		nextUR: function() {
+		Next: function() {
 			console.info('WME-AutoUR: nextUR');
-			if((WMEAutoUR.index+1) < WMEAutoUR.UR_len) {
-				WMEAutoUR.gotoURByIndex(++WMEAutoUR.index);
+			if((WMEAutoUR.Auto.index+1) < WMEAutoUR.Auto.UR_len) {
+				WMEAutoUR.Auto.gotoURByIndex(++WMEAutoUR.Auto.index);
 			}
 		},
 
@@ -252,10 +253,10 @@ function WMEAutoUR_Create() {
 		/**
 		 *@since version 0.1.0
 		 */
-		prevUR: function() {
+		Prev: function() {
 			console.info('WME-AutoUR: prevUR');
-			if(WMEAutoUR.index > 0) {
-				WMEAutoUR.gotoURByIndex(--WMEAutoUR.index);
+			if(WMEAutoUR.Auto.index > 0) {
+				WMEAutoUR.Auto.gotoURByIndex(--WMEAutoUR.Auto.index);
 			}
 		},
 		//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -263,9 +264,25 @@ function WMEAutoUR_Create() {
 		 *@since version 0.1.0
 		 */
 		gotoURByIndex: function(URindex) {
-			console.info("WME-AutoUR: gotoURByIndex");
-			WMEAutoUR.curURid = WMEAutoUR.UR_IDs[URindex];
-			WMEAutoUR.gotoURById(WMEAutoUR.curURid);
+			console.info("WME-AutoUR: gotoURByIndex " + URindex);
+			WMEAutoUR.Auto.curURid = WMEAutoUR.Auto.UR_IDs[URindex];
+			WMEAutoUR.Auto.gotoURById(WMEAutoUR.Auto.curURid);
+			return;
+		},
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.1.0
+		 */
+		gotoURById: function(URId) {
+			console.info("WME-AutoUR: gotoURById" + URId);
+			Waze.updateRequestsControl.selectById(URId);
+			var x = Waze.updateRequestsControl.currentRequest.attributes.geometry.x;
+			var y = Waze.updateRequestsControl.currentRequest.attributes.geometry.y;
+			Waze.map.setCenter([x,y],3);
+			WMEAutoUR.getInfo();
+			WMEAutoUR.changeMessage(Waze.updateRequestsControl.currentRequest.attributes.type);
+			$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.Auto.index+1)+"/"+WMEAutoUR.Auto.UR_len);
 			return;
 		}
 	}
@@ -422,22 +439,6 @@ function WMEAutoUR_Create() {
 
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
-	/**
-	 *@since version 0.1.0
-	 */
-	WMEAutoUR.gotoURById = function(URId) {
-		console.info("WME-AutoUR: gotoURById" + URId);
-		Waze.updateRequestsControl.selectById(URId);
-		var x = Waze.updateRequestsControl.currentRequest.attributes.geometry.x;
-		var y = Waze.updateRequestsControl.currentRequest.attributes.geometry.y;
-		Waze.map.setCenter([x,y],3);
-		WMEAutoUR.getInfo();
-		WMEAutoUR.changeMessage(Waze.updateRequestsControl.currentRequest.attributes.type);
-		$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.index+1)+"/"+WMEAutoUR.UR_len);
-		return;
-	}
-
-	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//------------------------  END OTHER FUNCTIONS  ---------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -527,12 +528,6 @@ function WMEAutoUR_Create_FloatUI() {
 						.html("WME-AutoUR " + WMEAutoUR.version)
 						.dblclick(WMEAutoUR.showDevInfo)
 						.attr("title","Click for Development Info"));
-		$(MainDIV_left).append($("<button>Prev</button>")
-						.click(WMEAutoUR.UR.prev)
-						.attr("title","Previous UR"));
-		$(MainDIV_left).append($("<button>Next</button>")
-						.click(WMEAutoUR.UR.next)
-						.attr("title","Next UR"));
 		$(MainDIV_left).append($("<button>Tools</button>")
 						.click(WMEAutoUR.showHideTools)
 						.attr("title","Show/Hide Tools Pannel"));
@@ -541,20 +536,38 @@ function WMEAutoUR_Create_FloatUI() {
 						//.css("float","right")
 						.css("text-align","left")
 						.css("display","block")
+						.css("width","275px")
 						.css("clear","both"));
 
-		$(MainDIV_left).append($("<span id='WME_AutoUR_Count'>")
-						.css("text-align","right")
-						.css("display","block")
-						.css("clear","both")
+		autoBar = $('<div>').css("width","100%")
+							.css("padding-top","10px");
+		$(MainDIV_left).append($(autoBar));
+
+		$(autoBar).append($("<button>Prev</button>")
+						.click(WMEAutoUR.Auto.Prev)
+						.css("position","relative")
+						.css("float","left")
+						.css("height","24px")
+						.attr("title","Previous UR"));
+
+		$(autoBar).append($("<button>Next</button>")
+						.click(WMEAutoUR.Auto.Next)
+						.css("position","relative")
 						.css("float","right")
+						.css("height","24px")
+						.attr("title","Next UR"));
+
+		$(autoBar).append($("<span id='WME_AutoUR_Count'>")
+						.css("text-align","center")
+						.css("display","block")
+						.css("width","60px")
+						.css("margin","0 auto")
 						.css("padding","3px")
 						.css("background-color","#000000")
 						.css("border-radius","5px")
 						.html("?/?")
-						.dblclick(WMEAutoUR.getIDs)
-						.attr("title","Double click to reload list of URs")
-						);
+						.dblclick(WMEAutoUR.Auto.getIDs)
+						.attr("title","Double click to reload list of URs"));
 
 		return MainDIV_left;
 	}
