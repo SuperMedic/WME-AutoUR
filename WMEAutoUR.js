@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.9.6
+// @version     0.9.6a
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -11,6 +11,7 @@
 
 
 /* Changelog
+ * 0.9.6a - Fixed auto count update issue
  * 0.9.6 - Moved Auto Buttons to bottom
  * 0.9.5 - Code clairity rewrite
  * 0.9.0 - Added support for manually choosing UR
@@ -72,7 +73,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.9.6';
+	WMEAutoUR.version = '0.9.6a';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -118,6 +119,7 @@ function WMEAutoUR_Create() {
 		// --- Create Floating UI --- //
 		WMEAutoUR_Create_FloatUI();
 	// @since 0.8.2 - Turned off auto UR finding
+		WMEAutoUR.Auto.index = 0;
 		//WMEAutoUR.Auto.getIDs();
 		window.setInterval(WMEAutoUR.UR.getActive,250);
 		window.setInterval(WMEAutoUR.Settings.Save,30000);
@@ -203,8 +205,6 @@ function WMEAutoUR_Create() {
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	WMEAutoUR.Auto = {
 
-		index: 0,
-
 		/**
 		 *@since version 0.1.0
 		 */
@@ -276,13 +276,13 @@ function WMEAutoUR_Create() {
 		 */
 		gotoURById: function(URId) {
 			console.info("WME-AutoUR: gotoURById" + URId);
+			$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.Auto.index+1)+"/"+WMEAutoUR.Auto.UR_len);
 			Waze.updateRequestsControl.selectById(URId);
 			var x = Waze.updateRequestsControl.currentRequest.attributes.geometry.x;
 			var y = Waze.updateRequestsControl.currentRequest.attributes.geometry.y;
 			Waze.map.setCenter([x,y],3);
-			WMEAutoUR.getInfo();
+			WMEAutoUR.UR.getInfo();
 			WMEAutoUR.changeMessage(Waze.updateRequestsControl.currentRequest.attributes.type);
-			$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.Auto.index+1)+"/"+WMEAutoUR.Auto.UR_len);
 			return;
 		}
 	}
