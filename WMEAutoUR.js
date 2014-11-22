@@ -534,7 +534,7 @@ function WMEAutoUR_Create_FloatUI() {
 	WMEAutoUR_FloatingUI.MainDIV = function() {
 		console.info("WME-WMEAutoUR_FloatingUI: create main div ");
 
-		var MainDIV = $('<div>').css("background","rgba(117, 79, 150, 0.85)");
+		var MainDIV = $('<div>').css("background","rgba(93, 133, 161, 0.85)");
 		$(MainDIV).attr("id","WME_AutoUR_main");
 		//$(WMEAutoUR.MainDIV).css("padding","10px");
 		$(MainDIV).css("color","#FFFFFF");
