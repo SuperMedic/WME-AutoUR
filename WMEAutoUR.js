@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.9.6a
+// @version     0.10.0
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -11,6 +11,7 @@
 
 
 /* Changelog
+ * 0.10.0 - Added toggle button for floating UI
  * 0.9.6a - Fixed auto count update issue
  * 0.9.6 - Moved Auto Buttons to bottom
  * 0.9.5 - Code clairity rewrite
@@ -73,7 +74,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.9.6a';
+	WMEAutoUR.version = '0.10.0';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -480,8 +481,48 @@ function WMEAutoUR_Create_FloatUI() {
 			console.info("WME-WMEAutoUR_FloatingUI: Loaded Pannel");
 		}
 
+		// See if the div is already created //
+		if ($("#WME_AutoUR_main_toggle").length==0) {
+			WMEAutoUR_FloatingUI.MainDIVtoggle();
+			console.info("WME-WMEAutoUR_FloatingUI: Loaded Pannel Toggle");
+		}
+
 		//--- Drag me Bishes!! ---//
 		$("#WME_AutoUR_main").draggable();
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 *@since version 0.10.0
+	 */
+	// ---------- MAIN DIV TOGGLE --------- //
+	WMEAutoUR_FloatingUI.MainDIVtoggle = function() {
+		console.info("WME-WMEAutoUR_FloatingUI: create main div toggle ");
+
+		var MainToggle = $('<div>').attr("title","Toggle AutoUR.")
+									.attr("id","WME_AutoUR_main_toggle")
+									.addClass("toolbar-button")
+									.css("background-image",'url("https://www.waze.com/assets-editor/images/vectors/problems/problem_pin_open-high.png")')
+									.css("background-repeat","no-repeat")
+									.css("background-position","center")
+									.append("<span>Toggle AutoUR</span>")
+									.click(WMEAutoUR_FloatingUI.hideWindow);
+
+		$("#edit-buttons").append(MainToggle);
+	}
+	/**
+	 *@since version 0.10.0
+	 */
+	// ---------- MAIN DIV TOGGLE --------- //
+	WMEAutoUR_FloatingUI.hideWindow = function() {
+		console.info("WME-WMEAutoUR_FloatingUI: hide UI ");
+
+		switch($("#WME_AutoUR_main").css("display")) {
+			case 'none': 	$("#WME_AutoUR_main").css("display","block");	break;
+			case 'block':	$("#WME_AutoUR_main").css("display","none");	break;
+			default:		$("#WME_AutoUR_main").css("display","block");	break;
+		}
 	}
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -528,15 +569,17 @@ function WMEAutoUR_Create_FloatUI() {
 						.html("WME-AutoUR " + WMEAutoUR.version)
 						.dblclick(WMEAutoUR.showDevInfo)
 						.attr("title","Click for Development Info"));
-		$(MainDIV_left).append($("<button>Tools</button>")
-						.click(WMEAutoUR.showHideTools)
-						.attr("title","Show/Hide Tools Pannel"));
+
+		//$(MainDIV_left).append($("<button>Editor</button>")
+		//				.click(WMEAutoUR.showHideTools)
+		//				.attr("title","Show/Hide Tools Pannel"));
 
 		$(MainDIV_left).append($("<span id='WME_AutoUR_Info'>")
 						//.css("float","right")
 						.css("text-align","left")
 						.css("display","block")
 						.css("width","275px")
+						.css("height","150px")
 						.css("clear","both"));
 
 		autoBar = $('<div>').css("width","100%")
@@ -583,26 +626,33 @@ function WMEAutoUR_Create_FloatUI() {
 
 		MainDIV_right = $('<div>').addClass('WME_AutoUR_main_right')
 								  .css("padding","10px")
-								  .css("width","228px")
+								  .css("width","275px")
 								  .css("text-align","center")
 								  .css("float","right");
-
 
 		$(MainDIV_right).append($("<button>Insert</button>")
 						.click(WMEAutoUR.Messages.Insert)
 						.css("float","left")
 						.attr("title","Insert Comment"));
 
-		$(MainDIV_right).append($("<button>Save This</button>")
-						.click(WMEAutoUR.Messages.Save)
-						.attr("title","Save Current Comment"));
+		$(MainDIV_right).append($("<button>Send</button>")
+						//.dblclick(WMEAutoUR.showHideTools)
+						.attr("title","Insert message, MARK OPEN, and close UR edit window. "));
 
-		$(MainDIV_right).append($("<button>Save All</button>")
-						.click(WMEAutoUR.Settings.Save)
-						//.css("clear","both")
-						.css("float","right")
-						//.css("margin-top","5px")
-						.attr("title","Save All Comments/Settings"));
+		$(MainDIV_right).append($("<button>Solve</button>")
+						//.dblclick(WMEAutoUR.showHideTools)
+						.attr("title","Insert message, MARK SOLVED."));
+
+		$(MainDIV_right).append($("<button>Not ID</button>")
+						//.dblclick(WMEAutoUR.showHideTools)
+						.attr("title","Insert message, MARK NOT IDENTIFIED."));
+
+		//$(MainDIV_right).append($("<button>Save All</button>")
+		//				.click(WMEAutoUR.Settings.Save)
+		//				//.css("clear","both")
+		//				.css("float","right")
+		//				//.css("margin-top","5px")
+		//				.attr("title","Save All Comments/Settings"));
 
 		$(MainDIV_right).append($("<textarea>")
 						.attr("id","WME_AutoUR_MSG_default_comment")
@@ -613,9 +663,15 @@ function WMEAutoUR_Create_FloatUI() {
 		var select = $("<select>")
 					  .attr("id","WME_AutoUR_MSG_Select")
 					  .attr("title","Select Message")
-					  .css("width","100%")
+					  .css("width","175px")
+					  .css("float","left")
 					  .change(WMEAutoUR.Messages.Change)
-					  .append("<option>-----</option>")
+					  .append("<option>-----</option>");
+
+		$(MainDIV_right).append($("<button>Save This</button>")
+						.click(WMEAutoUR.Messages.Save)
+						.css("float","right")
+						.attr("title","Save Current Comment"));
 
 		$(MainDIV_right).append(select);
 		WMEAutoUR_FloatingUI.createSelect(select);
