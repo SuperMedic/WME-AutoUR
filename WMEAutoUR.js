@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.10.0
+// @version     0.11.0
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -11,6 +11,7 @@
 
 
 /* Changelog
+ * 0.11.0 - Added tabbed interface
  * 0.10.0 - Added toggle button for floating UI
  * 0.9.6a - Fixed auto count update issue
  * 0.9.6 - Moved Auto Buttons to bottom
@@ -74,7 +75,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.10.0';
+	WMEAutoUR.version = '0.11.0';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -116,14 +117,17 @@ function WMEAutoUR_Create() {
 		WMEAutoUR.options = {};
 		// --- Load Settings --- //
 		WMEAutoUR.Settings.Load();
-		console.info("WME-AutoUR: starting (init.init)");
+		console.info("WME-AutoUR: starting (init)");
 		// --- Create Floating UI --- //
-		WMEAutoUR_Create_FloatUI();
+		//WMEAutoUR_Create_FloatUI();
+		// --- Create Floating UI --- //
+		WMEAutoUR_Create_TabbedUI();
 	// @since 0.8.2 - Turned off auto UR finding
 		WMEAutoUR.Auto.index = 0;
 		//WMEAutoUR.Auto.getIDs();
 		window.setInterval(WMEAutoUR.UR.getActive,250);
 		window.setInterval(WMEAutoUR.Settings.Save,30000);
+		WMEAutoUR.showDevInfo();
 		$(document).tooltip();
 	}
 
@@ -141,7 +145,7 @@ function WMEAutoUR_Create() {
 		 *@since version 0.9.0
 		 */
 		getActive: function() {
-			console.info("WME-AutoUR: getActiveUR");
+			console.info("WME-AutoUR getActive");
 			if(Waze.updateRequestsControl.currentRequest) {
 				var urID = Waze.updateRequestsControl.currentRequest.attributes.id;
 				if((WMEAutoUR.activeUR != urID)) {
@@ -156,7 +160,6 @@ function WMEAutoUR_Create() {
 		 *@since version 0.2.0
 		 */
 		getInfo: function() {
-			console.info('WME-AutoUR: UR Info');
 
 			var error_update_user_id = '-1'; //  (user ID)
 			var error_update_user = 'Reporter'; //  (user ID)
@@ -216,17 +219,11 @@ function WMEAutoUR_Create() {
 			WMEAutoUR.Auto.UR_len = 0;
 			WMEAutoUR.Auto.index = 0;
 			for(var e in WMEAutoUR.Auto.UR_Objs) {
-				//console.info(e);
 				WMEAutoUR.Auto.UR_IDs.push(e);
 				WMEAutoUR.Auto.UR_len++;
 			}
-			console.info("WME-AutoUR: WMEAutoUR.UR_len:"+WMEAutoUR.Auto.UR_len);
-			console.info("WME-AutoUR: WMEAutoUR.UR_IDs:"+WMEAutoUR.Auto.UR_IDs);
-			console.info("WME-AutoUR: WMEAutoUR.UR_Objs:"+WMEAutoUR.Auto.UR_Objs);
 			WMEAutoUR.Auto.index = 0;
-			console.info("WME-AutoUR: WMEAutoUR.index:"+WMEAutoUR.Auto.index);
 			$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.Auto.index+1)+"/"+WMEAutoUR.Auto.UR_len)
-			console.info('WME-AutoUR: Count Displayed');
 			WMEAutoUR.Auto.firstUR();
 			return;
 		},
@@ -244,7 +241,6 @@ function WMEAutoUR_Create() {
 		 *@since version 0.1.0
 		 */
 		Next: function() {
-			console.info('WME-AutoUR: nextUR');
 			if((WMEAutoUR.Auto.index+1) < WMEAutoUR.Auto.UR_len) {
 				WMEAutoUR.Auto.gotoURByIndex(++WMEAutoUR.Auto.index);
 			}
@@ -265,7 +261,6 @@ function WMEAutoUR_Create() {
 		 *@since version 0.1.0
 		 */
 		gotoURByIndex: function(URindex) {
-			console.info("WME-AutoUR: gotoURByIndex " + URindex);
 			WMEAutoUR.Auto.curURid = WMEAutoUR.Auto.UR_IDs[URindex];
 			WMEAutoUR.Auto.gotoURById(WMEAutoUR.Auto.curURid);
 			return;
@@ -276,7 +271,6 @@ function WMEAutoUR_Create() {
 		 *@since version 0.1.0
 		 */
 		gotoURById: function(URId) {
-			console.info("WME-AutoUR: gotoURById" + URId);
 			$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.Auto.index+1)+"/"+WMEAutoUR.Auto.UR_len);
 			Waze.updateRequestsControl.selectById(URId);
 			var x = Waze.updateRequestsControl.currentRequest.attributes.geometry.x;
@@ -306,7 +300,6 @@ function WMEAutoUR_Create() {
 		Save: function() {
 			console.info("WME-AutoUR: Save Settings");
 
-			console.info("WME-AutoUR: " + JSON.stringify(WMEAutoUR.options));
 			localStorage.setItem('WME_AutoUR', JSON.stringify(WMEAutoUR.options));
 		},
 
@@ -320,7 +313,6 @@ function WMEAutoUR_Create() {
 			var newOpts = JSON.parse(localStorage.getItem('WME_AutoUR'));
 
 			// --- Setup Defaults --- //
-			console.info("WME-AutoUR: checking defaults");
 			var names = [];
 			names[6] = "Incorrect turn";
 			names[7] = "Incorrect address";
@@ -355,9 +347,8 @@ function WMEAutoUR_Create() {
 		 *@since version 0.5.0
 		 */
 		Save: function() {
-			console.info("WME-AutoUR: Set Message: " + $("#WME_AutoUR_MSG_default_comment").val());
 			WMEAutoUR.options.messages[$("#WME_AutoUR_MSG_Select").val()] = $("#WME_AutoUR_MSG_default_comment").val();
-			console.info("WME-AutoUR: " + JSON.stringify(WMEAutoUR.options));
+			WMEAutoUR.Settings.Save();
 		},
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -365,11 +356,9 @@ function WMEAutoUR_Create() {
 		 *@since version 0.5.0
 		 */
 		Change: function() {
-			console.info("WME-AutoUR: changeMessage");
 
 			var index;
 			if((arguments.length == 1) && (typeof arguments[0] == "number")) {
-				console.info("WME-AutoUR: arguments");
 				index = arguments[0];
 				$('#WME_AutoUR_MSG_Select').val(index);
 			} else {
@@ -378,15 +367,12 @@ function WMEAutoUR_Create() {
 			if(index == null) {
 				index = $("#WME_AutoUR_MSG_Select").val();
 			}
-			console.info("WME-AutoUR: Change Message: " + WMEAutoUR.options.messages[index]);
 			$("#WME_AutoUR_MSG_default_comment").val(WMEAutoUR.options.messages[index]);
 
 			try {
 				if($("#update-request-panel textarea").length!=0) {
-					console.info("WME-AutoUR check textarea != 0");
 					WMEAutoUR.Messages.Insert();
 				} else {
-					console.info("WME-AutoUR check textarea == 0");
 					setTimeout(WMEAutoUR.Messages.Insert, 1000);
 				}
 			} catch(err) {
@@ -400,7 +386,6 @@ function WMEAutoUR_Create() {
 		 *@since version 0.3.0
 		 */
 		Insert: function() {
-			console.info("WME-AutoUR: Insert Comment");
 			$('#update-request-panel textarea').html($("#WME_AutoUR_MSG_default_comment").val());
 		}
 	}
@@ -421,6 +406,8 @@ function WMEAutoUR_Create() {
 		info_txt = info_txt + 'Beta Testers:<br>';
 		info_txt = info_txt + '<b>Stephenr1966</b><br>';
 		info_txt = info_txt + '<b>SeekingSerenity</b><br>';
+		info_txt = info_txt + '<b>t0cableguy</b><br>';
+		info_txt = info_txt + '<b>ct13</b><br>';
 		$('span[id="WME_AutoUR_Info"]').html(info_txt);
 	}
 
@@ -430,14 +417,12 @@ function WMEAutoUR_Create() {
 	 *@since version 0.3.1
 	 */
 	WMEAutoUR.showHideTools = function() {
-		console.info("WME-AutoUR: Show/Hide Tools");
 		switch($("#WME_AutoUR_main .WME_AutoUR_main_right").css("display")) {
 			case 'none': 	$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","block");	break;
 			case 'block':	$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","none");		break;
 			default:		$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","block");	break;
 		}
 	}
-
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//------------------------  END OTHER FUNCTIONS  ---------------------------------------------------------------------------------------------
@@ -460,15 +445,12 @@ function WMEAutoUR_Create() {
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //----------------  Create floating UI  ------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
-
-
 function WMEAutoUR_Create_FloatUI() {
 	WMEAutoUR_FloatingUI = {};
 	/**
 	 *@since version 0.8.1
 	 */
 	WMEAutoUR_FloatingUI.init = function() {
-		console.info("WME-WMEAutoUR_FloatingUI: create floating UI");
 
 		var MainDIV = WMEAutoUR_FloatingUI.MainDIV();
 
@@ -484,7 +466,6 @@ function WMEAutoUR_Create_FloatUI() {
 		// See if the div is already created //
 		if ($("#WME_AutoUR_main_toggle").length==0) {
 			WMEAutoUR_FloatingUI.MainDIVtoggle();
-			console.info("WME-WMEAutoUR_FloatingUI: Loaded Pannel Toggle");
 		}
 
 		//--- Drag me Bishes!! ---//
@@ -516,7 +497,6 @@ function WMEAutoUR_Create_FloatUI() {
 	 */
 	// ---------- MAIN DIV TOGGLE --------- //
 	WMEAutoUR_FloatingUI.hideWindow = function() {
-		console.info("WME-WMEAutoUR_FloatingUI: hide UI ");
 
 		switch($("#WME_AutoUR_main").css("display")) {
 			case 'none': 	$("#WME_AutoUR_main").css("display","block");	break;
@@ -532,7 +512,6 @@ function WMEAutoUR_Create_FloatUI() {
 	 */
 	// ---------- MAIN DIV --------- //
 	WMEAutoUR_FloatingUI.MainDIV = function() {
-		console.info("WME-WMEAutoUR_FloatingUI: create main div ");
 
 		var MainDIV = $('<div>').css("background","rgba(93, 133, 161, 0.85)");
 		$(MainDIV).attr("id","WME_AutoUR_main");
@@ -552,7 +531,6 @@ function WMEAutoUR_Create_FloatUI() {
 	 *@since version 0.8.1
 	 */
 	WMEAutoUR_FloatingUI.LeftSubDIV = function() {
-		console.info("WME-WMEAutoUR_FloatingUI: create L sub div");
 
 		MainDIV_left = $('<div>').addClass('WME_AutoUR_main_left')
 								  .css("padding","10px")
@@ -622,7 +600,6 @@ function WMEAutoUR_Create_FloatUI() {
 	 */
 	// ------- MAIN DIV RIGHT  ------- //
 	WMEAutoUR_FloatingUI.RightSubDIV = function() {
-		console.info("WME-WMEAutoUR_FloatingUI: create R sub div");
 
 		MainDIV_right = $('<div>').addClass('WME_AutoUR_main_right')
 								  .css("padding","10px")
@@ -683,20 +660,326 @@ function WMEAutoUR_Create_FloatUI() {
 	*@since version 0.6.1
 	*/
 	WMEAutoUR_FloatingUI.createSelect = function(select) {
-	console.info("WME-AutoUR: Create Select");
 
-	$.each(WMEAutoUR.options.names,function(i,v) {
-		if(v) {
-			var opt = $('<option>')
-			$(opt).attr('value',i);
-			$(opt).html(v);
-			$(select).append(opt);
-			//console.info(v);
+		$.each(WMEAutoUR.options.names,function(i,v) {
+			if(v) {
+				var opt = $('<option>')
+				$(opt).attr('value',i);
+				$(opt).html(v);
+				$(select).append(opt);
+			}
+		});
 		}
-	});
-	}
 
 	WMEAutoUR_FloatingUI.init();
+}
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//----------------  END Create floating UI  --------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//----------------  Create floating UI  ------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+
+function WMEAutoUR_Create_TabbedUI() {
+	WMEAutoUR_TabbedUI = {};
+	/**
+	 *@since version 0.11.0
+	 */
+	WMEAutoUR_TabbedUI.init = function() {
+
+		var ParentDIV = WMEAutoUR_TabbedUI.ParentDIV();
+		$(ParentDIV).append(WMEAutoUR_TabbedUI.Title());
+		$(ParentDIV).append(WMEAutoUR_TabbedUI.TabsHead());
+
+		var TabBody = WMEAutoUR_TabbedUI.TabsBody();
+
+		$(TabBody).append(WMEAutoUR_TabbedUI.EditorTAB);
+		$(TabBody).append(WMEAutoUR_TabbedUI.SettingsTAB);
+
+		$(ParentDIV).append(TabBody);
+
+		// See if the div is already created //
+		if ($("#WME_AutoUR_TAB_main").length==0) {
+			$("div.tips").after(ParentDIV);
+			console.info("WME-WMEAutoUR_TabbedUI: Loaded Pannel");
+		}
+
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	/**
+	 *@since version 0.11.0
+	 */
+	// ---------- MAIN DIV TOGGLE --------- //
+	WMEAutoUR_TabbedUI.hideWindow = function() {
+
+		switch($("#WME_AutoUR_TAB_main").css("height")) {
+		//switch($("#WME_AutoUR_TAB_main").css("height").slice(0,-2)) {
+			case '30px': 	$("#WME_AutoUR_TAB_main").css("height","auto");
+							$("#WMEAutoUR_TabbedUI_toggle").html("-");break;
+			//case '300px':	$("#WME_AutoUR_TAB_main").css("height","35px");
+			//				$("#WMEAutoUR_TabbedUI_toggle").html("+");	break;
+			default:		$("#WME_AutoUR_TAB_main").css("height","30px");
+							$("#WMEAutoUR_TabbedUI_toggle").html("+");break;
+		}
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	/**
+	 *@since version 0.11.0
+	 */
+	// ---------- MAIN DIV --------- //
+	WMEAutoUR_TabbedUI.ParentDIV = function() {
+
+		var MainTAB = $('<div>').attr("id","WME_AutoUR_TAB_main")
+								.css("color","#FFFFFF")
+								.css("border-bottom","2px solid #E9E9E9")
+								.css("margin","21px 0")
+								.css("padding-bottom","10px")
+								.css("width","275px")
+								.css("overflow","hidden")
+								.css("display","block");
+
+		return MainTAB;
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	/**
+	 *@since version 0.11.0
+	 */
+	// ---------- MAIN DIV --------- //
+	WMEAutoUR_TabbedUI.Title = function() {
+		console.info("WME-WMEAutoUR_TabbedUI: create main div ");
+
+		// ------- TITLE  ------- //
+		var mainTitle = $("<div>")
+						.attr("id","WME_AutoUR_TAB_title")
+						.css("width","100%")
+						.css("text-align","center")
+						.css("background-color","rgb(93, 133, 161)")
+						.css("border-radius","5px")
+						.css("padding","3px")
+						.css("margin-bottom","3px")
+						.html("WME-AutoUR " + WMEAutoUR.version)
+						.dblclick(WMEAutoUR.showDevInfo)
+						.attr("title","Click for Development Info");
+
+		$(mainTitle).append($('<div>').attr("id","WMEAutoUR_TabbedUI_toggle")
+									  .html("-")
+									  .css("float","right")
+									  .css("position","relative")
+									  .css("color","#ffffff")
+									  .css("right","3px")
+									  .css("top","0")
+									  .css("background","#000000")
+									  .css("height","16px")
+									  .css("width","16px")
+									  .css("display","block")
+									  .css("line-height","14px")
+									  .css("border-radius","5px")
+									  .click(WMEAutoUR_TabbedUI.hideWindow));
+
+		return mainTitle;
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	/**
+	 *@since version 0.11.0
+	 */
+	// ---------- MAIN DIV --------- //
+	WMEAutoUR_TabbedUI.TabsHead = function() {
+
+		// ------- TABS  ------- //
+		var mainTabs = $("<div>")
+						.attr("id","WME_AutoUR_TAB_head")
+						.css("padding","3px")
+						.css("margin-bottom","3px")
+						.attr("title","Click for Development Info");
+						//.html('<ul><li><a href="#tabs-1">One</a></li><li><a href="#tabs-2">Two</a></li></ul>');
+						//.tabs();
+		var tabs = $("<ul>").addClass("nav")
+							.addClass("nav-tabs");
+
+		$(tabs).append($("<li>").append($("<a>").attr("data-toggle","tab")
+												.attr("href","#tabs-1")
+												.html("Editor")
+									   ).addClass("active")
+					  );
+
+		$(tabs).append($("<li>").append($("<a>").attr("data-toggle","tab")
+												.attr("href","#tabs-2")
+												.html("Settings")
+												.addClass("active")
+									   )
+					  );
+
+		$(mainTabs).append(tabs);
+
+		return mainTabs;
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	/**
+	 *@since version 0.11.0
+	 */
+	// ---------- MAIN DIV --------- //
+	WMEAutoUR_TabbedUI.TabsBody = function() {
+
+		// ------- TABS  ------- //
+		var TabsBodyContainer = $("<div>")
+							  .attr("id","WME_AutoUR_TAB_tabs")
+							  .css("padding","0px")
+							  .addClass("tab-content");
+
+
+		return TabsBodyContainer;
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 *@since version 0.8.1
+	 */
+	WMEAutoUR_TabbedUI.EditorTAB = function() {
+
+		Tabs_Main = $('<div>').attr("id",'tabs-1')
+							  //.css("padding","10px")
+							  .addClass("tab-pane")
+							  .addClass("active");
+
+
+		//$(MainDIV_left).append($("<button>Editor</button>")
+		//				.click(WMEAutoUR.showHideTools)
+		//				.attr("title","Show/Hide Tools Pannel"));
+
+		$(Tabs_Main).append($("<span id='WME_AutoUR_Info'>")
+							//.css("float","right")
+							.css("text-align","left")
+							.css("display","block")
+							.css("width","275px")
+							//.css("height","150px")
+							.css("color","#000000")
+							.css("clear","both"));
+
+		autoBar = $('<div>').css("width","100%")
+							.css("padding-top","10px");
+		$(Tabs_Main).append($(autoBar));
+
+		$(autoBar).append($("<button>Prev</button>")
+							.click(WMEAutoUR.Auto.Prev)
+							.css("position","relative")
+							.css("float","left")
+							.css("height","24px")
+							.attr("title","Previous UR"));
+
+		$(autoBar).append($("<button>Next</button>")
+							.click(WMEAutoUR.Auto.Next)
+							.css("position","relative")
+							.css("float","right")
+							.css("height","24px")
+							.attr("title","Next UR"));
+
+		$(autoBar).append($("<span id='WME_AutoUR_Count'>")
+							.css("text-align","center")
+							.css("display","block")
+							.css("width","60px")
+							.css("margin","0 auto")
+							.css("padding","3px")
+							.css("background-color","#000000")
+							.css("border-radius","5px")
+							.html("?/?")
+							.dblclick(WMEAutoUR.Auto.getIDs)
+							.attr("title","Double click to reload list of URs"));
+
+
+		$(Tabs_Main).append($("<button>Insert</button>")
+							  .click(WMEAutoUR.Messages.Insert)
+							  .css("float","left")
+							  .attr("title","Insert Comment"));
+
+		$(Tabs_Main).append($("<button>Send</button>")
+							  //.dblclick(WMEAutoUR.showHideTools)
+							  .attr("title","Insert message, MARK OPEN, and close UR edit window. "));
+
+		$(Tabs_Main).append($("<button>Solve</button>")
+							  //.dblclick(WMEAutoUR.showHideTools)
+							  .attr("title","Insert message, MARK SOLVED."));
+
+		$(Tabs_Main).append($("<button>Not ID</button>")
+							//.dblclick(WMEAutoUR.showHideTools)
+							.attr("title","Insert message, MARK NOT IDENTIFIED."));
+
+		//$(MainDIV_right).append($("<button>Save All</button>")
+		//				.click(WMEAutoUR.Settings.Save)
+		//				//.css("clear","both")
+		//				.css("float","right")
+		//				//.css("margin-top","5px")
+		//				.attr("title","Save All Comments/Settings"));
+
+		$(Tabs_Main).append($("<textarea>")
+							  .attr("id","WME_AutoUR_MSG_default_comment")
+							  .css("width","100%")
+							  .css("height","150px")
+							  .attr("title","Default Comment"));
+
+		var select = $("<select>")
+					  .attr("id","WME_AutoUR_MSG_Select")
+					  .attr("title","Select Message")
+					  .css("width","175px")
+					  .css("float","left")
+					  .change(WMEAutoUR.Messages.Change)
+					  .append("<option>-----</option>");
+
+		$(Tabs_Main).append($("<button>Save This</button>")
+							  .click(WMEAutoUR.Messages.Save)
+							  .css("float","right")
+							  .attr("title","Save Current Comment"));
+
+		$(Tabs_Main).append(select);
+
+		WMEAutoUR_TabbedUI.createSelect(select);
+
+		return Tabs_Main;
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 *@since version 0.8.1
+	 */
+	// ------- MAIN DIV RIGHT  ------- //
+	WMEAutoUR_TabbedUI.SettingsTAB = function() {
+
+		var MainDIV_right = $('<div>').attr("id",'tabs-2')
+									  //.css("padding","10px")
+									  .css("width","275px")
+									  .css("text-align","center")
+									  .html("coming soon")
+									  .addClass("tab-pane");
+
+
+		return MainDIV_right;
+	}
+
+	/**
+	*@since version 0.6.1
+	*/
+	WMEAutoUR_TabbedUI.createSelect = function(select) {
+
+		$.each(WMEAutoUR.options.names,function(i,v) {
+			if(v) {
+				var opt = $('<option>')
+				$(opt).attr('value',i);
+				$(opt).html(v);
+				$(select).append(opt);
+			}
+		});
+	}
+
+	WMEAutoUR_TabbedUI.init();
 }
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //----------------  END Create floating UI  --------------------------------------------------------------------------------------------------
@@ -715,7 +998,6 @@ function WMEAutoUR_Create_FloatUI() {
 		 *@since version 0.0.1
 		 */
 		//WMEAutoUR.transformCoords = function(coords) {
-		//	console.info("WME-AutoUR: transformCoords");
 		//	return coords.transform(new OpenLayers.Projection("EPSG:900913"),new OpenLayers.Projection("EPSG:4326"));
 		//}
 
