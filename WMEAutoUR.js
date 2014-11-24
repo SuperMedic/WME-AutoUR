@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.11.0
+// @version     0.11.1
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -11,6 +11,7 @@
 
 
 /* Changelog
+ * 0.11.1 - Background proccesses now stop when AutoUR is minimized
  * 0.11.0 - Added tabbed interface
  * 0.10.0 - Added toggle button for floating UI
  * 0.9.6a - Fixed auto count update issue
@@ -75,7 +76,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.11.0';
+	WMEAutoUR.version = '0.11.1';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -115,6 +116,8 @@ function WMEAutoUR_Create() {
 	WMEAutoUR.init = function() {
 		// --- Setup Options --- //
 		WMEAutoUR.options = {};
+		// --- Setup Intervals --- //
+		WMEAutoUR.Intervals = {};
 		// --- Load Settings --- //
 		WMEAutoUR.Settings.Load();
 		console.info("WME-AutoUR: starting (init)");
@@ -125,8 +128,8 @@ function WMEAutoUR_Create() {
 	// @since 0.8.2 - Turned off auto UR finding
 		WMEAutoUR.Auto.index = 0;
 		//WMEAutoUR.Auto.getIDs();
-		window.setInterval(WMEAutoUR.UR.getActive,250);
-		window.setInterval(WMEAutoUR.Settings.Save,30000);
+		WMEAutoUR.Intervals.getActive = window.setInterval(WMEAutoUR.UR.getActive,250);
+		WMEAutoUR.Intervals.SaveSettings = window.setInterval(WMEAutoUR.Settings.Save,30000);
 		WMEAutoUR.showDevInfo();
 		$(document).tooltip();
 	}
@@ -425,6 +428,30 @@ function WMEAutoUR_Create() {
 	}
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 *@since version 0.11.0
+	 */
+	WMEAutoUR.off = function() {
+		console.info("WME-AutoUR Stopping...");
+		window.clearInterval(WMEAutoUR.Intervals.getActive);
+		window.clearInterval(WMEAutoUR.Intervals.SaveSettings);
+		WMEAutoUR.Settings.Save();
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 *@since version 0.11.0
+	 */
+	WMEAutoUR.on = function() {
+		console.info("WME-AutoUR Restarting...");
+		WMEAutoUR.Intervals.getActive = window.setInterval(WMEAutoUR.UR.getActive,250);
+		WMEAutoUR.Intervals.SaveSettings = window.setInterval(WMEAutoUR.Settings.Save,30000);
+	}
+
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//------------------------  END OTHER FUNCTIONS  ---------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -499,8 +526,10 @@ function WMEAutoUR_Create_FloatUI() {
 	WMEAutoUR_FloatingUI.hideWindow = function() {
 
 		switch($("#WME_AutoUR_main").css("display")) {
-			case 'none': 	$("#WME_AutoUR_main").css("display","block");	break;
-			case 'block':	$("#WME_AutoUR_main").css("display","none");	break;
+			case 'none': 	$("#WME_AutoUR_main").css("display","block");
+							WMEAutoUR.on();		break;
+			case 'block':	$("#WME_AutoUR_main").css("display","none");
+							WMEAutoUR.off();	break;
 			default:		$("#WME_AutoUR_main").css("display","block");	break;
 		}
 	}
@@ -719,11 +748,13 @@ function WMEAutoUR_Create_TabbedUI() {
 		switch($("#WME_AutoUR_TAB_main").css("height")) {
 		//switch($("#WME_AutoUR_TAB_main").css("height").slice(0,-2)) {
 			case '30px': 	$("#WME_AutoUR_TAB_main").css("height","auto");
-							$("#WMEAutoUR_TabbedUI_toggle").html("-");break;
+							$("#WMEAutoUR_TabbedUI_toggle").html("-");
+							WMEAutoUR.on();		break;
 			//case '300px':	$("#WME_AutoUR_TAB_main").css("height","35px");
 			//				$("#WMEAutoUR_TabbedUI_toggle").html("+");	break;
 			default:		$("#WME_AutoUR_TAB_main").css("height","30px");
-							$("#WMEAutoUR_TabbedUI_toggle").html("+");break;
+							$("#WMEAutoUR_TabbedUI_toggle").html("+");
+							WMEAutoUR.off();	break;
 		}
 	}
 
