@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.11.1
+// @version     0.11.2
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -11,6 +11,7 @@
 
 
 /* Changelog
+ * 0.11.2 - UI fix FF
  * 0.11.1 - Background proccesses now stop when AutoUR is minimized
  * 0.11.0 - Added tabbed interface
  * 0.10.0 - Added toggle button for floating UI
@@ -76,7 +77,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.11.1';
+	WMEAutoUR.version = '0.11.2';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -770,7 +771,8 @@ function WMEAutoUR_Create_TabbedUI() {
 								.css("border-bottom","2px solid #E9E9E9")
 								.css("margin","21px 0")
 								.css("padding-bottom","10px")
-								.css("width","275px")
+								.css("max-width","275px")
+								//.css("width","208px")
 								.css("overflow","hidden")
 								.css("display","block");
 
@@ -862,7 +864,7 @@ function WMEAutoUR_Create_TabbedUI() {
 		// ------- TABS  ------- //
 		var TabsBodyContainer = $("<div>")
 							  .attr("id","WME_AutoUR_TAB_tabs")
-							  .css("padding","0px")
+							  .attr("style","padding: 0 !important;")
 							  .addClass("tab-content");
 
 
@@ -959,12 +961,13 @@ function WMEAutoUR_Create_TabbedUI() {
 		var select = $("<select>")
 					  .attr("id","WME_AutoUR_MSG_Select")
 					  .attr("title","Select Message")
-					  .css("width","175px")
+					  .css("width","160px")
+					  //.css("width","175px")
 					  .css("float","left")
 					  .change(WMEAutoUR.Messages.Change)
 					  .append("<option>-----</option>");
 
-		$(Tabs_Main).append($("<button>Save This</button>")
+		$(Tabs_Main).append($("<button>Save</button>")
 							  .click(WMEAutoUR.Messages.Save)
 							  .css("float","right")
 							  .attr("title","Save Current Comment"));
