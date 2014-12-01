@@ -545,7 +545,7 @@ function WMEAutoUR_Create_FloatUI() {
 
 		var MainDIV = $('<div>').css("background","rgba(93, 133, 161, 0.85)");
 		$(MainDIV).attr("id","WME_AutoUR_main");
-		//$(WMEAutoUR.MainDIV).css("padding","10px");
+		//$(WMEAutoUR.MainDIV).css("padding-bottom","50px");
 		$(MainDIV).css("color","#FFFFFF");
 		$(MainDIV).css("border-radius","10px");
 		$(MainDIV).css("z-index","1000");
@@ -770,7 +770,7 @@ function WMEAutoUR_Create_TabbedUI() {
 								.css("color","#FFFFFF")
 								.css("border-bottom","2px solid #E9E9E9")
 								.css("margin","21px 0")
-								.css("padding-bottom","10px")
+								.css("padding-bottom","50px")
 								.css("max-width","275px")
 								//.css("width","208px")
 								.css("overflow","hidden")
