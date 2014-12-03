@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.11.2
+// @version     0.12.0
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -11,6 +11,7 @@
 
 
 /* Changelog
+ * 0.12.0 - Merged UI from branch, Updated Dev info, Created default messages
  * 0.11.2 - UI fix FF
  * 0.11.1 - Background proccesses now stop when AutoUR is minimized
  * 0.11.0 - Added tabbed interface
@@ -77,7 +78,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.11.2';
+	WMEAutoUR.version = '0.12.0';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -128,7 +129,6 @@ function WMEAutoUR_Create() {
 		WMEAutoUR_Create_TabbedUI();
 	// @since 0.8.2 - Turned off auto UR finding
 		WMEAutoUR.Auto.index = 0;
-		//WMEAutoUR.Auto.getIDs();
 		WMEAutoUR.Intervals.getActive = window.setInterval(WMEAutoUR.UR.getActive,250);
 		WMEAutoUR.Intervals.SaveSettings = window.setInterval(WMEAutoUR.Settings.Save,30000);
 		WMEAutoUR.showDevInfo();
@@ -186,17 +186,19 @@ function WMEAutoUR_Create() {
 
 
 			var info_txt = '';
-			info_txt = info_txt+"Error: "+error_txt+" ("+error_num+")<br>";
+			info_txt = info_txt+"<b>Error:</b> "+error_txt+" ("+error_num+")<br>";
 			//info_txt = info_txt+"Comment: "+error_comments+"<br>";
 			//info_txt = info_txt+"X: "+error_x+"<br>";
 			//info_txt = info_txt+"Y: "+error_y+"<br>";
 
-			var error_update_date = Math.floor(((((now_time - error_update_date_obj.getTime())/1000)/60)/60)/24) + " days (" + error_update_date_obj.toLocaleString() +  ")";
-			var error_drive_date = Math.floor(((((now_time - error_drive_date_obj.getTime())/1000)/60)/60)/24) + " days (" + error_drive_date_obj.toLocaleString() +  ")";
+			//var error_update_date = Math.floor(((((now_time - error_update_date_obj.getTime())/1000)/60)/60)/24) + " days (" + error_update_date_obj.toLocaleString() +  ")";
+			//var error_drive_date = Math.floor(((((now_time - error_drive_date_obj.getTime())/1000)/60)/60)/24) + " days (" + error_drive_date_obj.toLocaleString() +  ")";
+			var error_update_date = Math.floor(((((now_time - error_update_date_obj.getTime())/1000)/60)/60)/24) + " days ago";
+			var error_drive_date = Math.floor(((((now_time - error_drive_date_obj.getTime())/1000)/60)/60)/24) + " days ago";
 
-			info_txt = info_txt+"Created: "+error_drive_date+"<br>";
-			info_txt = info_txt+"Update: "+error_update_date+"<br>";
-			info_txt = info_txt+"User: "+error_update_user+"<br>";
+			info_txt = info_txt+"<b>Created:</b> "+error_drive_date+"<br>";
+			info_txt = info_txt+"<b>Updated:</b> "+error_update_date+"<br>";
+			info_txt = info_txt+"<b>By:</b> "+error_update_user+"<br>";
 			//info_txt = info_txt+"UserID: "+error_update_user_id+"<br>";
 
 			//$('span[id="WME_AutoUR_Info"]').html(info_txt);
@@ -314,30 +316,98 @@ function WMEAutoUR_Create() {
 		Load: function() {
 
 			console.info("WME-AutoUR: Load Settings");
-			var newOpts = JSON.parse(localStorage.getItem('WME_AutoUR'));
+			var newOpts;
+			var savedOpt = localStorage.WME_AutoUR;
+			if(savedOpt) {
+				newOpts = JSON.parse(localStorage.WME_AutoUR);
+			}
 
-			// --- Setup Defaults --- //
-			var names = [];
-			names[6] = "Incorrect turn";
-			names[7] = "Incorrect address";
-			names[8] = "Incorrect route";
-			names[9] = "Missing roundabout";
-			names[10] = "General error";
-			names[11] = "Turn not allowed";
-			names[12] = "Incorrect junction";
-			names[13] = "Missing bridge overpass";
-			names[14] = "Wrong driving direction";
-			names[15] = "Missing exit";
-			names[16] = "Missing road";
-
-			// --- Load Defaults --- //
-			if(!newOpts) {
-				WMEAutoUR.options.names = names;
-				WMEAutoUR.options.messages = names;
-			} else {
+			if(newOpts != null) {
 				WMEAutoUR.options = newOpts;
 			}
+			console.info("WME-AutoUR: Load Settings");
+
+			// --- Load Defaults --- //
+			var field = 0;
+			try {
+			  console.info(WMEAutoUR.options.names[6]);
+			} catch(e) {
+				field += 1;
+			}
+			try {
+			  console.info(WMEAutoUR.options.messages[6]);
+			} catch(e) {
+				field += 2;
+			}
+			try {
+			  console.info(WMEAutoUR.options.stale[1].Days);
+			} catch(e) {
+				field += 4;
+			}
+
+			WMEAutoUR.Settings.Reset(field);
+
 			console.info("WME-AutoUR: checking defaults... done");
+		},
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.4.2
+		 */
+		Reset: function() {
+			console.info("WME-AutoUR: RESET");
+			// --- Setup Defaults --- //
+			var def_names = [];
+			def_names[6] = "Incorrect turn";
+			def_names[7] = "Incorrect address";
+			def_names[8] = "Incorrect route";
+			def_names[9] = "Missing roundabout";
+			def_names[10] = "General error";
+			def_names[11] = "Turn not allowed";
+			def_names[12] = "Incorrect junction";
+			def_names[13] = "Missing bridge overpass";
+			def_names[14] = "Wrong driving direction";
+			def_names[15] = "Missing Exit";
+			def_names[16] = "Missing Road";
+			def_names[18] = "Missing Landmark";
+			def_names[19] = "Blocked Road";
+			def_names[21] = "Missing Street Name";
+			def_names[22] = "Incorrect Street Prefix or Suffix";
+
+			// --- Thank you RickZAbel --- //
+			var def_messages = [];
+			$.each(def_names, function(k,v) {
+				def_messages[k] = "Thank you for your report! Can you please give me more information about the " + v + " you reported?";
+			})
+
+
+			var def_staleMsgs = [];
+			def_staleMsgs[1] = {"Days":2,"Comment":"Stale 1"};
+			def_staleMsgs[2] = {"Days":4,"Comment":"Stale 2"};
+
+			// --- Load Defaults --- //
+			if((typeof(arguments[0]) == 'number')) {
+				var field = arguments[0];
+				if(field >= 4) {
+					WMEAutoUR.options.stale = def_staleMsgs;
+					field -= 4;
+				}
+				if(field >= 2) {
+					WMEAutoUR.options.messages = def_messages;
+					field -= 2;
+				}
+				if(field == 1) {
+					WMEAutoUR.options.names = def_names;
+					field -= 1;
+				}
+			} else {
+				WMEAutoUR.options.names = def_names;
+				WMEAutoUR.options.messages = def_messages;
+				WMEAutoUR.options.stale = def_staleMsgs;
+			}
+
+			WMEAutoUR.Settings.Save();
+
 		}
 	};
 
@@ -351,7 +421,7 @@ function WMEAutoUR_Create() {
 		 *@since version 0.5.0
 		 */
 		Save: function() {
-			WMEAutoUR.options.messages[$("#WME_AutoUR_MSG_Select").val()] = $("#WME_AutoUR_MSG_default_comment").val();
+			WMEAutoUR.options.messages[$("#WMEAutoUR_Inital_Select").val()] = $("#WMEAutoUR_Inital_Comment").val();
 			WMEAutoUR.Settings.Save();
 		},
 
@@ -364,14 +434,15 @@ function WMEAutoUR_Create() {
 			var index;
 			if((arguments.length == 1) && (typeof arguments[0] == "number")) {
 				index = arguments[0];
-				$('#WME_AutoUR_MSG_Select').val(index);
+				$('#WMEAutoUR_Inital_Select').val(index);
 			} else {
 				index = $(this).val();
 			}
 			if(index == null) {
-				index = $("#WME_AutoUR_MSG_Select").val();
+				index = $("#WMEAutoUR_Inital_Select").val();
 			}
-			$("#WME_AutoUR_MSG_default_comment").val(WMEAutoUR.options.messages[index]);
+			$("#WMEAutoUR_Inital_Comment").val(WMEAutoUR.options.messages[index]);
+			$("#WME_AutoUR_MSG_Display").html(WMEAutoUR.options.messages[index]);
 
 			try {
 				if($("#update-request-panel textarea").length!=0) {
@@ -382,6 +453,7 @@ function WMEAutoUR_Create() {
 			} catch(err) {
 				console.info("WME-AutoUR: Error:"+err);
 			}
+
 		},
 
 
@@ -390,7 +462,19 @@ function WMEAutoUR_Create() {
 		 *@since version 0.3.0
 		 */
 		Insert: function() {
-			$('#update-request-panel textarea').html($("#WME_AutoUR_MSG_default_comment").val());
+			console.info("WME-AutoUR: Change");
+			  // --- INITIAL COMMENT --- //
+			//if($('#UR_type--1').is(':checked')) {
+				$('#update-request-panel textarea').html(WMEAutoUR.options.messages[Waze.updateRequestsControl.currentRequest.attributes.type]);
+			//}
+			//  // --- STALE 1 COMMENT --- //
+			//if($('#UR_type-0').is(':checked')) {
+			//	$('#update-request-panel textarea').html(WMEAutoUR.options.stale[1].Comment);
+			//}
+			//  // --- STALE 1 COMMENT --- //
+			//if($('#UR_type-1').is(':checked')) {
+			//	$('#update-request-panel textarea').html(WMEAutoUR.options.stale[2].Comment);
+			//}
 		}
 	}
 
@@ -412,6 +496,7 @@ function WMEAutoUR_Create() {
 		info_txt = info_txt + '<b>SeekingSerenity</b><br>';
 		info_txt = info_txt + '<b>t0cableguy</b><br>';
 		info_txt = info_txt + '<b>ct13</b><br>';
+		info_txt = info_txt + '<b>RickZAbel</b><br>';
 		$('span[id="WME_AutoUR_Info"]').html(info_txt);
 	}
 
@@ -464,9 +549,6 @@ function WMEAutoUR_Create() {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //----------------------  WMEAutoUR FUNCTIONS  -----------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -578,10 +660,6 @@ function WMEAutoUR_Create_FloatUI() {
 						.dblclick(WMEAutoUR.showDevInfo)
 						.attr("title","Click for Development Info"));
 
-		//$(MainDIV_left).append($("<button>Editor</button>")
-		//				.click(WMEAutoUR.showHideTools)
-		//				.attr("title","Show/Hide Tools Pannel"));
-
 		$(MainDIV_left).append($("<span id='WME_AutoUR_Info'>")
 						//.css("float","right")
 						.css("text-align","left")
@@ -654,13 +732,6 @@ function WMEAutoUR_Create_FloatUI() {
 						//.dblclick(WMEAutoUR.showHideTools)
 						.attr("title","Insert message, MARK NOT IDENTIFIED."));
 
-		//$(MainDIV_right).append($("<button>Save All</button>")
-		//				.click(WMEAutoUR.Settings.Save)
-		//				//.css("clear","both")
-		//				.css("float","right")
-		//				//.css("margin-top","5px")
-		//				.attr("title","Save All Comments/Settings"));
-
 		$(MainDIV_right).append($("<textarea>")
 						.attr("id","WME_AutoUR_MSG_default_comment")
 						.css("width","100%")
@@ -698,18 +769,21 @@ function WMEAutoUR_Create_FloatUI() {
 				$(opt).html(v);
 				$(select).append(opt);
 			}
-		});
 		}
+		);
+	}
+
 
 	WMEAutoUR_FloatingUI.init();
 }
+
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //----------------  END Create floating UI  --------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
-//----------------  Create floating UI  ------------------------------------------------------------------------------------------------------
+//----------------  Create Tabbed UI  ------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -722,11 +796,16 @@ function WMEAutoUR_Create_TabbedUI() {
 
 		var ParentDIV = WMEAutoUR_TabbedUI.ParentDIV();
 		$(ParentDIV).append(WMEAutoUR_TabbedUI.Title());
+		//$(ParentDIV).append($('<span>').attr("id","WME_AutoUR_Info")
+		//								.click(function(){$(this).html('');})
+		//								.css("color","#000000"));
+
 		$(ParentDIV).append(WMEAutoUR_TabbedUI.TabsHead());
 
 		var TabBody = WMEAutoUR_TabbedUI.TabsBody();
 
 		$(TabBody).append(WMEAutoUR_TabbedUI.EditorTAB);
+		$(TabBody).append(WMEAutoUR_TabbedUI.MessagesTAB);
 		$(TabBody).append(WMEAutoUR_TabbedUI.SettingsTAB);
 
 		$(ParentDIV).append(TabBody);
@@ -747,12 +826,9 @@ function WMEAutoUR_Create_TabbedUI() {
 	WMEAutoUR_TabbedUI.hideWindow = function() {
 
 		switch($("#WME_AutoUR_TAB_main").css("height")) {
-		//switch($("#WME_AutoUR_TAB_main").css("height").slice(0,-2)) {
 			case '30px': 	$("#WME_AutoUR_TAB_main").css("height","auto");
 							$("#WMEAutoUR_TabbedUI_toggle").html("-");
 							WMEAutoUR.on();		break;
-			//case '300px':	$("#WME_AutoUR_TAB_main").css("height","35px");
-			//				$("#WMEAutoUR_TabbedUI_toggle").html("+");	break;
 			default:		$("#WME_AutoUR_TAB_main").css("height","30px");
 							$("#WMEAutoUR_TabbedUI_toggle").html("+");
 							WMEAutoUR.off();	break;
@@ -831,19 +907,24 @@ function WMEAutoUR_Create_TabbedUI() {
 						.css("padding","3px")
 						.css("margin-bottom","3px")
 						.attr("title","Click for Development Info");
-						//.html('<ul><li><a href="#tabs-1">One</a></li><li><a href="#tabs-2">Two</a></li></ul>');
-						//.tabs();
 		var tabs = $("<ul>").addClass("nav")
 							.addClass("nav-tabs");
 
 		$(tabs).append($("<li>").append($("<a>").attr("data-toggle","tab")
-												.attr("href","#tabs-1")
+												.attr("href","#WMEAutoUR_EDIT_TAB")
 												.html("Editor")
 									   ).addClass("active")
 					  );
 
 		$(tabs).append($("<li>").append($("<a>").attr("data-toggle","tab")
-												.attr("href","#tabs-2")
+												.attr("href","#WMEAutoUR_MSG_TAB")
+												.html("Messages")
+												.addClass("active")
+									   )
+					  );
+
+		$(tabs).append($("<li>").append($("<a>").attr("data-toggle","tab")
+												.attr("href","#WMEAutoUR_SET_TAB")
 												.html("Settings")
 												.addClass("active")
 									   )
@@ -867,7 +948,6 @@ function WMEAutoUR_Create_TabbedUI() {
 							  .attr("style","padding: 0 !important;")
 							  .addClass("tab-content");
 
-
 		return TabsBodyContainer;
 	}
 
@@ -878,17 +958,11 @@ function WMEAutoUR_Create_TabbedUI() {
 	 */
 	WMEAutoUR_TabbedUI.EditorTAB = function() {
 
-		Tabs_Main = $('<div>').attr("id",'tabs-1')
-							  //.css("padding","10px")
-							  .addClass("tab-pane")
-							  .addClass("active");
+		editTAB = $('<div>').attr("id",'WMEAutoUR_EDIT_TAB')
+							.addClass("tab-pane")
+							.addClass("active");
 
-
-		//$(MainDIV_left).append($("<button>Editor</button>")
-		//				.click(WMEAutoUR.showHideTools)
-		//				.attr("title","Show/Hide Tools Pannel"));
-
-		$(Tabs_Main).append($("<span id='WME_AutoUR_Info'>")
+		$(editTAB).append($("<span id='WME_AutoUR_Info'>")
 							//.css("float","right")
 							.css("text-align","left")
 							.css("display","block")
@@ -899,7 +973,7 @@ function WMEAutoUR_Create_TabbedUI() {
 
 		autoBar = $('<div>').css("width","100%")
 							.css("padding-top","10px");
-		$(Tabs_Main).append($(autoBar));
+		$(editTAB).append($(autoBar));
 
 		$(autoBar).append($("<button>Prev</button>")
 							.click(WMEAutoUR.Auto.Prev)
@@ -928,55 +1002,33 @@ function WMEAutoUR_Create_TabbedUI() {
 							.attr("title","Double click to reload list of URs"));
 
 
-		$(Tabs_Main).append($("<button>Insert</button>")
+		$(editTAB).append($("<button>Insert</button>")
 							  .click(WMEAutoUR.Messages.Insert)
 							  .css("float","left")
 							  .attr("title","Insert Comment"));
 
-		$(Tabs_Main).append($("<button>Send</button>")
+		$(editTAB).append($("<button>Send</button>")
 							  //.dblclick(WMEAutoUR.showHideTools)
 							  .attr("title","Insert message, MARK OPEN, and close UR edit window. "));
 
-		$(Tabs_Main).append($("<button>Solve</button>")
+		$(editTAB).append($("<button>Solve</button>")
 							  //.dblclick(WMEAutoUR.showHideTools)
 							  .attr("title","Insert message, MARK SOLVED."));
 
-		$(Tabs_Main).append($("<button>Not ID</button>")
+		$(editTAB).append($("<button>Not ID</button>")
 							//.dblclick(WMEAutoUR.showHideTools)
 							.attr("title","Insert message, MARK NOT IDENTIFIED."));
 
-		//$(MainDIV_right).append($("<button>Save All</button>")
-		//				.click(WMEAutoUR.Settings.Save)
-		//				//.css("clear","both")
-		//				.css("float","right")
-		//				//.css("margin-top","5px")
-		//				.attr("title","Save All Comments/Settings"));
+		$(editTAB).append($("<span id='WME_AutoUR_MSG_Display'>")
+							.css("text-align","left")
+							.css("display","block")
+							.css("width","275px")
+							.css("padding","10px 0")
+							.css("color","#000000")
+							.css("clear","both"));
 
-		$(Tabs_Main).append($("<textarea>")
-							  .attr("id","WME_AutoUR_MSG_default_comment")
-							  .css("width","100%")
-							  .css("height","150px")
-							  .attr("title","Default Comment"));
 
-		var select = $("<select>")
-					  .attr("id","WME_AutoUR_MSG_Select")
-					  .attr("title","Select Message")
-					  .css("width","160px")
-					  //.css("width","175px")
-					  .css("float","left")
-					  .change(WMEAutoUR.Messages.Change)
-					  .append("<option>-----</option>");
-
-		$(Tabs_Main).append($("<button>Save</button>")
-							  .click(WMEAutoUR.Messages.Save)
-							  .css("float","right")
-							  .attr("title","Save Current Comment"));
-
-		$(Tabs_Main).append(select);
-
-		WMEAutoUR_TabbedUI.createSelect(select);
-
-		return Tabs_Main;
+		return editTAB;
 	}
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -984,18 +1036,148 @@ function WMEAutoUR_Create_TabbedUI() {
 	/**
 	 *@since version 0.8.1
 	 */
-	// ------- MAIN DIV RIGHT  ------- //
+	// ------- MESSAGES TAB ------- //
+	WMEAutoUR_TabbedUI.MessagesTAB = function() {
+
+		var msgTAB = $('<div>').attr("id",'WMEAutoUR_MSG_TAB')
+								//.css("padding","10px")
+								.css("width","275px")
+								.css("text-align","center")
+								.html("coming soon")
+								.addClass("tab-pane");
+
+		var select = $("<select>").attr("id","WMEAutoUR_Inital_Select")
+								.attr("title","Select Message")
+								.css("width","200px")
+								.css("float","left")
+								.change(WMEAutoUR.Messages.Change)
+								.focus(WMEAutoUR.Messages.Save)
+								.css("padding-top","5px")
+								.append("<option>-----</option>");
+
+		WMEAutoUR_TabbedUI.createSelect(select);
+
+
+		// ---  INITIAL COMMENT --- //
+		$(msgTAB).append($("<div>").css("clear","both")
+									.css("height","156px")
+									.css("margin-bottom","10px")
+									.append($("<h3>").html("Initial")
+													  .css("color","black")
+													  .css("text-align","left")
+										   )
+									.append($("<textarea>").attr("id","WMEAutoUR_Inital_Comment")
+														  .css("float","left")
+														  .css("height","125px")
+														  .css("position","relative")
+														  .css("float","left")
+														  .css("margin-top","5px")
+														  .css("width","200px")
+														  .css("clear","both")
+										   )
+									.append(select)
+						  );
+
+
+		// --- STALE 1 COMMENT --- //
+		$(msgTAB).append($("<div>").css("clear","both")
+									.css("height","134px")
+									.append($("<h3>").html("Stale 1")
+														.css("color","black")
+														.css("text-align","left")
+														.css("padding-top","20px")
+										   )
+									.append($("<textarea>").attr("id","UR_Stale_1_Comment")
+														  .attr("disabled","true")
+														  .css("float","left")
+														  .css("height","125px")
+														  .css("position","relative")
+														  .css("float","left")
+														  .css("margin-top","5px")
+														  .css("width","200px")
+														  .css("clear","both")
+														  .html(WMEAutoUR.options.stale[1].Comment)
+											)
+									.append($("<input>").attr("type","text")
+														.attr("id","UR_Stale_1_Days")
+														.attr("disabled","true")
+														.attr("value",WMEAutoUR.options.stale[1].Days)
+														.css("height","24px")
+														.css("width","36px")
+														.css("text-align","center")
+														.css("position","relative")
+														.css("float","left")
+														.css("clear","both")
+														.css("padding-top","5px")
+											)
+						 );
+
+		// --- STALE 2 COMMENT --- //
+		$(msgTAB).append($("<div>").css("clear","both")
+									.css("height","134px")
+									.append($("<h3>").html("Stale 2")
+														.css("color","black")
+														.css("text-align","left")
+														.css("padding-top","20px")
+										   )
+									.append($("<textarea>").attr("id","UR_Stale_2_Comment")
+														  .attr("disabled","true")
+														  .css("float","left")
+														  .css("height","125px")
+														  .css("position","relative")
+														  .css("float","left")
+														  .css("margin-top","5px")
+														  .css("width","200px")
+														  .css("clear","both")
+														  .html(WMEAutoUR.options.stale[2].Comment)
+											)
+									.append($("<input>").attr("type","text")
+														.attr("id","UR_Stale_2_Days")
+														.attr("disabled","true")
+														.attr("value",WMEAutoUR.options.stale[2].Days)
+														.css("height","24px")
+														.css("width","36px")
+														.css("text-align","center")
+														.css("position","relative")
+														.css("float","left")
+														.css("clear","both")
+														.css("padding-top","5px")
+											)
+						 );
+
+
+
+		$(msgTAB).append($("<button>Save</button>")
+				  .click(WMEAutoUR.Settings.Save)
+				  .css("float","right")
+				  .attr("title","Save Current Comment"));
+
+
+		return msgTAB;
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 *@since version 0.8.1
+	 */
+	// ------- SETTINGS TAB ------- //
 	WMEAutoUR_TabbedUI.SettingsTAB = function() {
 
-		var MainDIV_right = $('<div>').attr("id",'tabs-2')
-									  //.css("padding","10px")
-									  .css("width","275px")
-									  .css("text-align","center")
-									  .html("coming soon")
-									  .addClass("tab-pane");
+		var setTAB = $('<div>').attr("id",'WMEAutoUR_SET_TAB')
+								//.css("padding","10px")
+								.css("width","275px")
+								.css("text-align","center")
+								.html("coming soon")
+								.addClass("tab-pane");
+
+		$(setTAB).append($("<button>Reset</button>")
+				  .click(WMEAutoUR.Settings.Reset)
+				  .css("float","right")
+				  .attr("title","Reset settings to defaults."));
 
 
-		return MainDIV_right;
+		return setTAB;
 	}
 
 	/**
