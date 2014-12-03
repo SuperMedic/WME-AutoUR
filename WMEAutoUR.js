@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.12.0
+// @version     0.12.1
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -11,6 +11,7 @@
 
 
 /* Changelog
+ * 0.12.1 - Confined Auto selection to screen, enabled Initial/Stale/Dead/None filters
  * 0.12.0 - Merged UI from branch, Updated Dev info, Created default messages
  * 0.11.2 - UI fix FF
  * 0.11.1 - Background proccesses now stop when AutoUR is minimized
@@ -78,7 +79,8 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.12.0';
+	WMEAutoUR.version = '0.12.1';
+	WMEAutoUR.logPrefix = 'WMEAutoUR';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -169,6 +171,7 @@ function WMEAutoUR_Create() {
 			var error_update_user = 'Reporter'; //  (user ID)
 
 			var now_time = new Date().getTime(); // (error number)
+			var error_id = Waze.updateRequestsControl.currentRequest.attributes.id; // (id)
 			var error_num = Waze.updateRequestsControl.currentRequest.attributes.type; // (error number)
 			var error_txt = Waze.updateRequestsControl.currentRequest.attributes.typeText; // (error text)
 			var error_comments = Waze.updateRequestsControl.currentRequest.attributes.hasComments; // (are there comments?)
@@ -191,15 +194,13 @@ function WMEAutoUR_Create() {
 			//info_txt = info_txt+"X: "+error_x+"<br>";
 			//info_txt = info_txt+"Y: "+error_y+"<br>";
 
-			//var error_update_date = Math.floor(((((now_time - error_update_date_obj.getTime())/1000)/60)/60)/24) + " days (" + error_update_date_obj.toLocaleString() +  ")";
-			//var error_drive_date = Math.floor(((((now_time - error_drive_date_obj.getTime())/1000)/60)/60)/24) + " days (" + error_drive_date_obj.toLocaleString() +  ")";
 			var error_update_date = Math.floor(((((now_time - error_update_date_obj.getTime())/1000)/60)/60)/24) + " days ago";
 			var error_drive_date = Math.floor(((((now_time - error_drive_date_obj.getTime())/1000)/60)/60)/24) + " days ago";
 
 			info_txt = info_txt+"<b>Created:</b> "+error_drive_date+"<br>";
 			info_txt = info_txt+"<b>Updated:</b> "+error_update_date+"<br>";
 			info_txt = info_txt+"<b>By:</b> "+error_update_user+"<br>";
-			//info_txt = info_txt+"UserID: "+error_update_user_id+"<br>";
+			info_txt = info_txt+"<b>URID:</b> "+error_id+"<br>";
 
 			//$('span[id="WME_AutoUR_Info"]').html(info_txt);
 			return info_txt;
@@ -219,49 +220,163 @@ function WMEAutoUR_Create() {
 		 *@since version 0.1.0
 		 */
 		getIDs: function() {
-			console.info("WME-AutoUR: Getting UR IDs");
-			WMEAutoUR.Auto.UR_Objs = Waze.model.mapUpdateRequests.objects;
-			WMEAutoUR.Auto.UR_IDs = [];
-			WMEAutoUR.Auto.UR_len = 0;
-			WMEAutoUR.Auto.index = 0;
-			for(var e in WMEAutoUR.Auto.UR_Objs) {
-				WMEAutoUR.Auto.UR_IDs.push(e);
-				WMEAutoUR.Auto.UR_len++;
-			}
-			WMEAutoUR.Auto.index = 0;
-			$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.Auto.index+1)+"/"+WMEAutoUR.Auto.UR_len)
-			WMEAutoUR.Auto.firstUR();
-			return;
-
-			//var WMEAutoURViewport = Waze.map.getExtent();
-			//var WMEAutoURViewTop = WMEAutoURViewport.top;
-			//var WMEAutoURViewBottom = WMEAutoURViewport.bottom;
-			//var WMEAutoURViewLeft = WMEAutoURViewport.left;
-			//var WMEAutoURViewRight = WMEAutoURViewport.right;
-			//
-			//console.info(WMEAutoUR.logPrefix+": Getting Screen IDs");
+			//console.info("WME-AutoUR: Getting UR IDs");
 			//WMEAutoUR.Auto.UR_Objs = Waze.model.mapUpdateRequests.objects;
-			//WMEAutoUR.Auto.UR_VIEW_IDs = []; // IDs in view
-			//WMEAutoUR.Auto.UR_WORK_IDs = []; // IDs after filter
+			//WMEAutoUR.Auto.UR_IDs = [];
 			//WMEAutoUR.Auto.UR_len = 0;
 			//WMEAutoUR.Auto.index = 0;
 			//for(var e in WMEAutoUR.Auto.UR_Objs) {
-			//	var cur_obj = WMEAutoUR.Auto.UR_Objs[e];
-			//	var cur_x = cur_obj.attributes.geometry.x;
-			//	var cur_y = cur_obj.attributes.geometry.y;
-			//
-			//	if((cur_x > WMEAutoURViewport.left) && (cur_x < WMEAutoURViewport.right)) {
-			//		if((cur_y > WMEAutoURViewport.bottom) && (cur_y < WMEAutoURViewport.top)) {
-			//			Waze.updateRequestsControl.selectById(e);
-			//			WMEAutoUR.Auto.UR_VIEW_IDs.push(e);
-			//		}
-			//	}
+			//	WMEAutoUR.Auto.UR_IDs.push(e);
+			//	WMEAutoUR.Auto.UR_len++;
 			//}
-			//
-			//window.setTimeout(WMEAutoUR.Auto.filterURs,1500);
-			//
 			//WMEAutoUR.Auto.index = 0;
+			//$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.Auto.index+1)+"/"+WMEAutoUR.Auto.UR_len)
+			//WMEAutoUR.Auto.firstUR();
+			//return;
+
+			var WMEAutoURViewport = Waze.map.getExtent();
+			var WMEAutoURViewTop = WMEAutoURViewport.top;
+			var WMEAutoURViewBottom = WMEAutoURViewport.bottom;
+			var WMEAutoURViewLeft = WMEAutoURViewport.left;
+			var WMEAutoURViewRight = WMEAutoURViewport.right;
+
+			console.info(WMEAutoUR.logPrefix+": Getting Screen IDs");
+			WMEAutoUR.Auto.UR_Objs = Waze.model.mapUpdateRequests.objects;
+			WMEAutoUR.Auto.UR_VIEW_IDs = []; // IDs in view
+			WMEAutoUR.Auto.UR_WORK_IDs = []; // IDs after filter
+			WMEAutoUR.Auto.UR_len = 0;
+			WMEAutoUR.Auto.index = 0;
+			for(var e in WMEAutoUR.Auto.UR_Objs) {
+				var cur_obj = WMEAutoUR.Auto.UR_Objs[e];
+				var cur_x = cur_obj.attributes.geometry.x;
+				var cur_y = cur_obj.attributes.geometry.y;
+
+				if((cur_x > WMEAutoURViewport.left) && (cur_x < WMEAutoURViewport.right)) {
+					if((cur_y > WMEAutoURViewport.bottom) && (cur_y < WMEAutoURViewport.top)) {
+						Waze.updateRequestsControl.selectById(e);
+						WMEAutoUR.Auto.UR_VIEW_IDs.push(e);
+						console.info(e);
+					}
+				}
+			}
+// --- WHY ARE WE WAITING HERE? --- //
+			window.setTimeout(WMEAutoUR.Auto.filterURs,1500);
+
+			WMEAutoUR.Auto.index = 0;
 			return;
+		},
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.11.8RE
+		 */
+		filterURs: function() {
+			console.info("FILTER URS");
+
+			// --- now in usec --- //
+			var now_time = new Date().getTime();
+
+			for(var i=0; i<WMEAutoUR.Auto.UR_VIEW_IDs.length;i++) {
+				console.info("urFOR");
+				var cur_ur_id = WMEAutoUR.Auto.UR_VIEW_IDs[i];
+				var cur_ur_obj = WMEAutoUR.Auto.UR_Objs[cur_ur_id];
+				Waze.updateRequestsControl.selectById(cur_ur_id);
+				// --- NO FILTER --- //
+				if($("#WME_AutoUR_Filter_button").val() == '2') {
+					WMEAutoUR.Auto.UR_len++;
+					WMEAutoUR.Auto.UR_WORK_IDs.push(cur_ur_id);
+					continue;
+				}
+				// --- CHECK SPECIAL --- //
+				if(WMEAutoUR.Auto.specialRejects(cur_ur_id)) continue;
+				if(WMEAutoUR.Auto.reporterComments(cur_ur_id)) continue;
+				// --- INITIAL COMMENT --- //
+				if($("#WME_AutoUR_Filter_button").val() == '-1') {
+					if(!cur_ur_obj.attributes.hasComments) {
+						WMEAutoUR.Auto.UR_len++;
+						WMEAutoUR.Auto.UR_WORK_IDs.push(cur_ur_id);
+						continue;
+					}
+				}
+				//// === SET UP TIMES === ////
+				// --- created in usec --- //
+				var drive_date_obj = new Date(Waze.updateRequestsControl.currentRequest.attributes.driveDate);
+				// --- created in days --- //
+				var drive_date = Math.floor(((((now_time - drive_date_obj.getTime())/1000)/60)/60)/24);
+				// --- updated (commented) in usec --- //
+				var update_date_obj = new Date(Waze.updateRequestsControl.currentRequest.attributes.updatedOn);
+				// --- updated (commented) in days --- //
+				var update_date = Math.floor(((((now_time - update_date_obj.getTime())/1000)/60)/60)/24);
+
+
+				  // --- STALE 1 COMMENT --- //
+				if($("#WME_AutoUR_Filter_button").val() == '0') {
+					if(wazeModel.updateRequestSessions.objects[cur_ur_id].comments.length == 1) {
+						if((drive_date > WMEAutoUR.options.stale[1].Days) && (update_date > WMEAutoUR.options.stale[1].Days)) {
+							WMEAutoUR.Auto.UR_len++;
+							WMEAutoUR.Auto.UR_WORK_IDs.push(cur_ur_id);
+						}
+					}
+				}
+				  // --- STALE 2 COMMENT --- //
+				if($("#WME_AutoUR_Filter_button").val() == '1') {
+					if(wazeModel.updateRequestSessions.objects[cur_ur_id].comments.length >= 2) {
+						console.info(drive_date + " : " + update_date);
+						if((drive_date >= WMEAutoUR.options.stale[2].Days) && (update_date >= WMEAutoUR.options.stale[2].Days)) {
+							WMEAutoUR.Auto.UR_len++;
+							WMEAutoUR.Auto.UR_WORK_IDs.push(cur_ur_id);
+						}
+					}
+				}
+			}
+			console.info(WMEAutoUR.Auto.UR_WORK_IDs);
+
+			//$('span[id="WMEAutoUR_URs_selected"]').html(WMEAutoUR.Auto.UR_len + " URs selected");
+			if(WMEAutoUR.Auto.UR_len) {
+				$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.Auto.index+1)+"/"+WMEAutoUR.Auto.UR_len);
+			} else {
+				$('span[id="WME_AutoUR_Count"]').html("0/0");
+			}
+
+			window.setTimeout(WMEAutoUR.Messages.Close,750);
+		},
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.11.16RE
+		 */
+		specialRejects: function(urID) {
+			//var exp = /^\[([a-zA-Z]*)\]/;
+			var ur_desc = Waze.model.mapUpdateRequests.objects[urID].attributes.description;
+			if(ur_desc) {
+				if(ur_desc.match(/^\[.*\]/)) {
+					switch(ur_desc.match(/^\[([a-zA-Z]*)\]/)[1]) {
+						case 'ROADWORKS':
+						case 'CONSTRUCTION':
+						case 'CLOSURE':
+						case 'EVENT':
+						case 'NOTE':		return true;	break;
+						default:		return false;	break;
+					}
+				}
+			}
+			return false;
+		},
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.11.17RE
+		 */
+		reporterComments: function(urID) {
+			var reporter_comment = wazeModel.updateRequestSessions.objects[urID].comments;
+			for(var i=0;i<reporter_comment.length;i++) {
+				if(!reporter_comment[i].userID) {
+					console.info("true");
+					return true;
+				}
+			}
+			console.info("false");
+			return false;
 		},
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -297,7 +412,7 @@ function WMEAutoUR_Create() {
 		 *@since version 0.1.0
 		 */
 		gotoURByIndex: function(URindex) {
-			WMEAutoUR.Auto.curURid = WMEAutoUR.Auto.UR_IDs[URindex];
+			WMEAutoUR.Auto.curURid = WMEAutoUR.Auto.UR_WORK_IDs[URindex];
 			WMEAutoUR.Auto.gotoURById(WMEAutoUR.Auto.curURid);
 			return;
 		},
@@ -314,6 +429,34 @@ function WMEAutoUR_Create() {
 			Waze.map.setCenter([x,y],3);
 			WMEAutoUR.UR.getInfo();
 			WMEAutoUR.changeMessage(Waze.updateRequestsControl.currentRequest.attributes.type);
+			return;
+		},
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.1.0
+		 */
+		filterButton: function(e) {
+			switch($("#WME_AutoUR_Filter_button").val()) {
+				case '2':		$("#WME_AutoUR_Filter_button").val(-1)
+															  .css("background-color","Green")
+															  .css("color","White")
+															  .html("Initial");	break;
+				case '0':		$("#WME_AutoUR_Filter_button").val(1)
+															  .css("background-color","Red")
+															  .css("color","black")
+															  .html("Dead");	break;
+				case '-1':		$("#WME_AutoUR_Filter_button").val(0)
+															  .css("background-color","Yellow")
+															  .css("color","black")
+															  .html("Stale");	break;
+				case '1':
+				default:		$("#WME_AutoUR_Filter_button").val(2)
+															  .css("background-color","White")
+															  .css("color","Black")
+															  .html("None");	break;
+			}
+
 			return;
 		}
 	}
@@ -1032,22 +1175,30 @@ function WMEAutoUR_Create_TabbedUI() {
 							.attr("title","Double click to reload list of URs"));
 
 
-		$(editTAB).append($("<button>Insert</button>")
-							  .click(WMEAutoUR.Messages.Insert)
+		$(editTAB).append($("<button>None</button>")
+							  .attr("id","WME_AutoUR_Filter_button")
+							  .click(WMEAutoUR.Auto.filterButton)
+							  .val(2)
 							  .css("float","left")
-							  .attr("title","Insert Comment"));
+							  .css("background-color","White")
+							  .css("color","Black")
+							  .css("width","55px")
+							  .attr("title","Change filter between Initial-Stale-Dead."));
 
 		$(editTAB).append($("<button>Send</button>")
 							  //.dblclick(WMEAutoUR.showHideTools)
+							  .attr("disabled","true")
 							  .attr("title","Insert message, MARK OPEN, and close UR edit window. "));
 
 		$(editTAB).append($("<button>Solve</button>")
 							  //.dblclick(WMEAutoUR.showHideTools)
+							  .attr("disabled","true")
 							  .attr("title","Insert message, MARK SOLVED."));
 
 		$(editTAB).append($("<button>Not ID</button>")
 							//.dblclick(WMEAutoUR.showHideTools)
-							.attr("title","Insert message, MARK NOT IDENTIFIED."));
+							  .attr("disabled","true")
+							  .attr("title","Insert message, MARK NOT IDENTIFIED."));
 
 		$(editTAB).append($("<span id='WME_AutoUR_MSG_Display'>")
 							.css("text-align","left")
