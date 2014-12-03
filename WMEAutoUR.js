@@ -232,6 +232,36 @@ function WMEAutoUR_Create() {
 			$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.Auto.index+1)+"/"+WMEAutoUR.Auto.UR_len)
 			WMEAutoUR.Auto.firstUR();
 			return;
+
+			//var WMEAutoURViewport = Waze.map.getExtent();
+			//var WMEAutoURViewTop = WMEAutoURViewport.top;
+			//var WMEAutoURViewBottom = WMEAutoURViewport.bottom;
+			//var WMEAutoURViewLeft = WMEAutoURViewport.left;
+			//var WMEAutoURViewRight = WMEAutoURViewport.right;
+			//
+			//console.info(WMEAutoUR.logPrefix+": Getting Screen IDs");
+			//WMEAutoUR.Auto.UR_Objs = Waze.model.mapUpdateRequests.objects;
+			//WMEAutoUR.Auto.UR_VIEW_IDs = []; // IDs in view
+			//WMEAutoUR.Auto.UR_WORK_IDs = []; // IDs after filter
+			//WMEAutoUR.Auto.UR_len = 0;
+			//WMEAutoUR.Auto.index = 0;
+			//for(var e in WMEAutoUR.Auto.UR_Objs) {
+			//	var cur_obj = WMEAutoUR.Auto.UR_Objs[e];
+			//	var cur_x = cur_obj.attributes.geometry.x;
+			//	var cur_y = cur_obj.attributes.geometry.y;
+			//
+			//	if((cur_x > WMEAutoURViewport.left) && (cur_x < WMEAutoURViewport.right)) {
+			//		if((cur_y > WMEAutoURViewport.bottom) && (cur_y < WMEAutoURViewport.top)) {
+			//			Waze.updateRequestsControl.selectById(e);
+			//			WMEAutoUR.Auto.UR_VIEW_IDs.push(e);
+			//		}
+			//	}
+			//}
+			//
+			//window.setTimeout(WMEAutoUR.Auto.filterURs,1500);
+			//
+			//WMEAutoUR.Auto.index = 0;
+			return;
 		},
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -627,7 +657,7 @@ function WMEAutoUR_Create_FloatUI() {
 
 		var MainDIV = $('<div>').css("background","rgba(93, 133, 161, 0.85)");
 		$(MainDIV).attr("id","WME_AutoUR_main");
-		//$(WMEAutoUR.MainDIV).css("padding-bottom","50px");
+		//$(WMEAutoUR.MainDIV).css("padding","10px");
 		$(MainDIV).css("color","#FFFFFF");
 		$(MainDIV).css("border-radius","10px");
 		$(MainDIV).css("z-index","1000");
@@ -846,7 +876,7 @@ function WMEAutoUR_Create_TabbedUI() {
 								.css("color","#FFFFFF")
 								.css("border-bottom","2px solid #E9E9E9")
 								.css("margin","21px 0")
-								.css("padding-bottom","50px")
+								.css("padding-bottom","10px")
 								.css("max-width","275px")
 								//.css("width","208px")
 								.css("overflow","hidden")
