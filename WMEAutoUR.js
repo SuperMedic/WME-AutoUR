@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.12.1
+// @version     0.12.2
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -11,7 +11,8 @@
 
 
 /* Changelog
- * 0.12.1 - Confined Auto selection to screen, enabled Initial/Stale/Dead/None filters
+ * 0.12.2 - Reset now repopulates select, New select added to front page and tied into reset
+ * 0.12.1 - Confined Auto selection to screen, enabled Initial/Stale/Dead/None filters, disabled send/solve/notID buttons
  * 0.12.0 - Merged UI from branch, Updated Dev info, Created default messages
  * 0.11.2 - UI fix FF
  * 0.11.1 - Background proccesses now stop when AutoUR is minimized
@@ -79,7 +80,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.12.1';
+	WMEAutoUR.version = '0.12.2';
 	WMEAutoUR.logPrefix = 'WMEAutoUR';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -220,20 +221,6 @@ function WMEAutoUR_Create() {
 		 *@since version 0.1.0
 		 */
 		getIDs: function() {
-			//console.info("WME-AutoUR: Getting UR IDs");
-			//WMEAutoUR.Auto.UR_Objs = Waze.model.mapUpdateRequests.objects;
-			//WMEAutoUR.Auto.UR_IDs = [];
-			//WMEAutoUR.Auto.UR_len = 0;
-			//WMEAutoUR.Auto.index = 0;
-			//for(var e in WMEAutoUR.Auto.UR_Objs) {
-			//	WMEAutoUR.Auto.UR_IDs.push(e);
-			//	WMEAutoUR.Auto.UR_len++;
-			//}
-			//WMEAutoUR.Auto.index = 0;
-			//$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.Auto.index+1)+"/"+WMEAutoUR.Auto.UR_len)
-			//WMEAutoUR.Auto.firstUR();
-			//return;
-
 			var WMEAutoURViewport = Waze.map.getExtent();
 			var WMEAutoURViewTop = WMEAutoURViewport.top;
 			var WMEAutoURViewBottom = WMEAutoURViewport.bottom;
@@ -498,37 +485,35 @@ function WMEAutoUR_Create() {
 			if(newOpts != null) {
 				WMEAutoUR.options = newOpts;
 			}
-			console.info("WME-AutoUR: Load Settings");
 
 			// --- Load Defaults --- //
 			var field = 0;
 			try {
-			  console.info(WMEAutoUR.options.names[6]);
+			  console.info("Name test: "+WMEAutoUR.options.names[6]);
 			} catch(e) {
 				field += 1;
 			}
 			try {
-			  console.info(WMEAutoUR.options.messages[6]);
+			  console.info("Message test: "+WMEAutoUR.options.messages[6]);
 			} catch(e) {
 				field += 2;
 			}
 			try {
-			  console.info(WMEAutoUR.options.stale[1].Days);
+			  console.info("Stale test: "+WMEAutoUR.options.stale[1].Days);
 			} catch(e) {
 				field += 4;
 			}
 
-			WMEAutoUR.Settings.Reset(field);
+			WMEAutoUR.Settings.setDefault(field);
 
 			console.info("WME-AutoUR: checking defaults... done");
 		},
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
-		 *@since version 0.4.2
+		 *@since version 0.12.1
 		 */
-		Reset: function() {
-			console.info("WME-AutoUR: RESET");
+		setDefault: function() {
 			// --- Setup Defaults --- //
 			var def_names = [];
 			def_names[6] = "Incorrect turn";
@@ -581,6 +566,24 @@ function WMEAutoUR_Create() {
 
 			WMEAutoUR.Settings.Save();
 
+		},
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.5.0
+		 */
+		Reset: function() {
+			console.info("WME-AutoUR: RESET");
+			WMEAutoUR.Settings.setDefault(7);
+			$('#WMEAutoUR_Inital_Select').empty()
+										  .append("<option>-----</option>");
+			$('#WMEAutoUR_Insert_Select').empty()
+										  .append("<option>-----</option>");
+
+			$('#WMEAutoUR_Inital_Comment').val('');
+			$('#WME_AutoUR_MSG_Display').html('');
+			WMEAutoUR_TabbedUI.createSelect($('#WMEAutoUR_Inital_Select'));
+			WMEAutoUR_TabbedUI.createSelect($('#WMEAutoUR_Insert_Select'));
 		}
 	};
 
@@ -616,6 +619,7 @@ function WMEAutoUR_Create() {
 			}
 			$("#WMEAutoUR_Inital_Comment").val(WMEAutoUR.options.messages[index]);
 			$("#WME_AutoUR_MSG_Display").html(WMEAutoUR.options.messages[index]);
+			$('#WMEAutoUR_Insert_Select').val(index);
 
 			try {
 				if($("#update-request-panel textarea").length!=0) {
@@ -635,19 +639,16 @@ function WMEAutoUR_Create() {
 		 *@since version 0.3.0
 		 */
 		Insert: function() {
-			console.info("WME-AutoUR: Change");
-			  // --- INITIAL COMMENT --- //
-			//if($('#UR_type--1').is(':checked')) {
 				$('#update-request-panel textarea').html(WMEAutoUR.options.messages[Waze.updateRequestsControl.currentRequest.attributes.type]);
-			//}
-			//  // --- STALE 1 COMMENT --- //
-			//if($('#UR_type-0').is(':checked')) {
-			//	$('#update-request-panel textarea').html(WMEAutoUR.options.stale[1].Comment);
-			//}
-			//  // --- STALE 1 COMMENT --- //
-			//if($('#UR_type-1').is(':checked')) {
-			//	$('#update-request-panel textarea').html(WMEAutoUR.options.stale[2].Comment);
-			//}
+		},
+
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.3.0
+		 */
+		insertFromSelect: function() {
+				$('#update-request-panel textarea').html(WMEAutoUR.options.messages[$('#WMEAutoUR_Insert_Select').val()]);
 		}
 	}
 
@@ -1193,12 +1194,24 @@ function WMEAutoUR_Create_TabbedUI() {
 		$(editTAB).append($("<button>Solve</button>")
 							  //.dblclick(WMEAutoUR.showHideTools)
 							  .attr("disabled","true")
-							  .attr("title","Insert message, MARK SOLVED."));
+							  .attr("title","Insert message, <b style='color:red;'>MARK SOLVED.</b>"));
 
 		$(editTAB).append($("<button>Not ID</button>")
 							//.dblclick(WMEAutoUR.showHideTools)
 							  .attr("disabled","true")
-							  .attr("title","Insert message, MARK NOT IDENTIFIED."));
+							  .attr("title","Insert message, <b style='color:red;'>MARK NOT IDENTIFIED.</b>"));
+
+		var edit_select = $("<select>").attr("id","WMEAutoUR_Insert_Select")
+									  .attr("title","Select message to be inserted")
+									  .css("width","200px")
+									  .css("float","left")
+									  .change(WMEAutoUR.Messages.insertFromSelect)
+									  .css("padding-top","5px")
+									  .append("<option>-----</option>");
+
+		WMEAutoUR_TabbedUI.createSelect(edit_select);
+
+		$(editTAB).append(edit_select);
 
 		$(editTAB).append($("<span id='WME_AutoUR_MSG_Display'>")
 							.css("text-align","left")
