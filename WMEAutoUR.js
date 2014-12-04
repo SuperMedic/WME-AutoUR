@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.12.2
+// @version     0.12.3
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -11,6 +11,7 @@
 
 
 /* Changelog
+ * 0.12.3 - LINT fixes, Fixed jump to 1st UR, Fixed following issues #13,#29.1
  * 0.12.2 - Reset now repopulates select, New select added to front page and tied into reset
  * 0.12.1 - Confined Auto selection to screen, enabled Initial/Stale/Dead/None filters, disabled send/solve/notID buttons
  * 0.12.0 - Merged UI from branch, Updated Dev info, Created default messages
@@ -80,7 +81,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.12.2';
+	WMEAutoUR.version = '0.12.3';
 	WMEAutoUR.logPrefix = 'WMEAutoUR';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -98,7 +99,7 @@ function WMEAutoUR_Create() {
 			//if ("undefined" != typeof unsafeWindow.W.model.chat.rooms._events.listeners.add[0].obj.userPresenters[unsafeWindow.Waze.model.loginManager.user.id] ) {
 			if ("undefined" != typeof Waze.map ) {
 				console.info("WME-AutoUR: ready to go");
-				WMEAutoUR.init()
+				WMEAutoUR.init();
 			} else {
 				console.info("WME-AutoUR: waiting for WME to load...");
 				setTimeout(WMEAutoUR.startcode, 1000);
@@ -108,7 +109,7 @@ function WMEAutoUR_Create() {
 			console.info("WME-AutoUR: Error:"+err);
 			setTimeout(WMEAutoUR.startcode, 1000);
 		}
-	}
+	};
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//-------------  ##########  START CODE FUNCTION ##########  ---------------------------------------------------------------------------------
@@ -136,7 +137,7 @@ function WMEAutoUR_Create() {
 		WMEAutoUR.Intervals.SaveSettings = window.setInterval(WMEAutoUR.Settings.Save,30000);
 		WMEAutoUR.showDevInfo();
 		$(document).tooltip();
-	}
+	};
 
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -160,6 +161,8 @@ function WMEAutoUR_Create() {
 					$('span[id="WME_AutoUR_Info"]').html(WMEAutoUR.UR.getInfo());
 					WMEAutoUR.Messages.Change(Waze.updateRequestsControl.currentRequest.attributes.type);
 				}
+			} else {
+			  WMEAutoUR.activeUR = null;
 			}
 		},
 
@@ -206,7 +209,7 @@ function WMEAutoUR_Create() {
 			//$('span[id="WME_AutoUR_Info"]').html(info_txt);
 			return info_txt;
 		}
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//----------------------  END MANUAL UR FUNCTIONS  -------------------------------------------------------------------------------------------
@@ -264,9 +267,7 @@ function WMEAutoUR_Create() {
 			var now_time = new Date().getTime();
 
 			for(var i=0; i<WMEAutoUR.Auto.UR_VIEW_IDs.length;i++) {
-				console.info("urFOR");
 				var cur_ur_id = WMEAutoUR.Auto.UR_VIEW_IDs[i];
-				var cur_ur_obj = WMEAutoUR.Auto.UR_Objs[cur_ur_id];
 				Waze.updateRequestsControl.selectById(cur_ur_id);
 				// --- NO FILTER --- //
 				if($("#WME_AutoUR_Filter_button").val() == '2') {
@@ -279,11 +280,8 @@ function WMEAutoUR_Create() {
 				if(WMEAutoUR.Auto.reporterComments(cur_ur_id)) continue;
 				// --- INITIAL COMMENT --- //
 				if($("#WME_AutoUR_Filter_button").val() == '-1') {
-					if(!cur_ur_obj.attributes.hasComments) {
-						WMEAutoUR.Auto.UR_len++;
-						WMEAutoUR.Auto.UR_WORK_IDs.push(cur_ur_id);
-						continue;
-					}
+					WMEAutoUR.Auto.Comments.initial(cur_ur_id);
+					continue;
 				}
 				//// === SET UP TIMES === ////
 				// --- created in usec --- //
@@ -298,22 +296,13 @@ function WMEAutoUR_Create() {
 
 				  // --- STALE 1 COMMENT --- //
 				if($("#WME_AutoUR_Filter_button").val() == '0') {
-					if(wazeModel.updateRequestSessions.objects[cur_ur_id].comments.length == 1) {
-						if((drive_date > WMEAutoUR.options.stale[1].Days) && (update_date > WMEAutoUR.options.stale[1].Days)) {
-							WMEAutoUR.Auto.UR_len++;
-							WMEAutoUR.Auto.UR_WORK_IDs.push(cur_ur_id);
-						}
-					}
+					WMEAutoUR.Auto.Comments.stale(cur_ur_id,update_date);
+					continue;
 				}
 				  // --- STALE 2 COMMENT --- //
 				if($("#WME_AutoUR_Filter_button").val() == '1') {
-					if(wazeModel.updateRequestSessions.objects[cur_ur_id].comments.length >= 2) {
-						console.info(drive_date + " : " + update_date);
-						if((drive_date >= WMEAutoUR.options.stale[2].Days) && (update_date >= WMEAutoUR.options.stale[2].Days)) {
-							WMEAutoUR.Auto.UR_len++;
-							WMEAutoUR.Auto.UR_WORK_IDs.push(cur_ur_id);
-						}
-					}
+					WMEAutoUR.Auto.Comments.dead(cur_ur_id,update_date);
+					continue;
 				}
 			}
 			console.info(WMEAutoUR.Auto.UR_WORK_IDs);
@@ -325,7 +314,63 @@ function WMEAutoUR_Create() {
 				$('span[id="WME_AutoUR_Count"]').html("0/0");
 			}
 
-			window.setTimeout(WMEAutoUR.Messages.Close,750);
+			window.setTimeout(WMEAutoUR.Auto.firstUR,750);
+		},
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+
+		Comments: {
+
+			/**
+			 *@since version 0.12.3
+			 */
+			initial: function(cur_id) {
+				var cur_ur_obj = WMEAutoUR.Auto.UR_Objs[cur_id];
+				if(!cur_ur_obj.attributes.hasComments) {
+					WMEAutoUR.Auto.UR_len++;
+					WMEAutoUR.Auto.UR_WORK_IDs.push(cur_id);
+				}
+				return;
+			},
+			//--------------------------------------------------------------------------------------------------------------------------------------------
+			/**
+			 *@since version 0.12.3
+			 */
+			stale: function(cur_id,update) {
+				if(wazeModel.updateRequestSessions.objects[cur_id].comments.length == 1) {
+					if((update > WMEAutoUR.options.stale[1].Days)) {
+						WMEAutoUR.Auto.UR_len++;
+						WMEAutoUR.Auto.UR_WORK_IDs.push(cur_id);
+					}
+				}
+				return;
+			},
+			//--------------------------------------------------------------------------------------------------------------------------------------------
+			/**
+			 *@since version 0.12.3
+			 */
+			dead: function(cur_id,update) {
+				if(wazeModel.updateRequestSessions.objects[cur_id].comments.length == 2) {
+					if((update > WMEAutoUR.options.stale[2].Days)) {
+						WMEAutoUR.Auto.UR_len++;
+						WMEAutoUR.Auto.UR_WORK_IDs.push(cur_id);
+					}
+				}
+				return;
+			},
+			//--------------------------------------------------------------------------------------------------------------------------------------------
+			/**
+			 *@since version 0.12.3
+			 */
+			clean: function(cur_id) {
+				var cur_ur_obj = WMEAutoUR.Auto.UR_Objs[cur_id];
+				if(!cur_ur_obj.attributes.hasComments) {
+					WMEAutoUR.Auto.UR_len++;
+					WMEAutoUR.Auto.UR_WORK_IDs.push(cur_id);
+				}
+				return;
+			}
+
 		},
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -342,8 +387,8 @@ function WMEAutoUR_Create() {
 						case 'CONSTRUCTION':
 						case 'CLOSURE':
 						case 'EVENT':
-						case 'NOTE':		return true;	break;
-						default:		return false;	break;
+						case 'NOTE':		return true;
+						default:		return false;
 					}
 				}
 			}
@@ -372,6 +417,7 @@ function WMEAutoUR_Create() {
 		 */
 		firstUR: function() {
 			WMEAutoUR.Auto.gotoURByIndex(WMEAutoUR.Auto.index);
+			WMEAutoUR.Messages.ShowComment();
 		},
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -382,6 +428,7 @@ function WMEAutoUR_Create() {
 			if((WMEAutoUR.Auto.index+1) < WMEAutoUR.Auto.UR_len) {
 				WMEAutoUR.Auto.gotoURByIndex(++WMEAutoUR.Auto.index);
 			}
+			WMEAutoUR.Messages.ShowComment();
 		},
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -393,6 +440,7 @@ function WMEAutoUR_Create() {
 			if(WMEAutoUR.Auto.index > 0) {
 				WMEAutoUR.Auto.gotoURByIndex(--WMEAutoUR.Auto.index);
 			}
+			WMEAutoUR.Messages.ShowComment();
 		},
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
@@ -482,7 +530,7 @@ function WMEAutoUR_Create() {
 				newOpts = JSON.parse(localStorage.WME_AutoUR);
 			}
 
-			if(newOpts != null) {
+			if(newOpts !== null) {
 				WMEAutoUR.options = newOpts;
 			}
 
@@ -536,12 +584,12 @@ function WMEAutoUR_Create() {
 			var def_messages = [];
 			$.each(def_names, function(k,v) {
 				def_messages[k] = "Thank you for your report! Can you please give me more information about the " + v + " you reported?";
-			})
+			});
 
 
 			var def_staleMsgs = [];
-			def_staleMsgs[1] = {"Days":2,"Comment":"Stale 1"};
-			def_staleMsgs[2] = {"Days":4,"Comment":"Stale 2"};
+			def_staleMsgs[1] = {"Days":7,"Comment":"Stale 1"};
+			def_staleMsgs[2] = {"Days":7,"Comment":"Stale 2"};
 
 			// --- Load Defaults --- //
 			if((typeof(arguments[0]) == 'number')) {
@@ -614,7 +662,7 @@ function WMEAutoUR_Create() {
 			} else {
 				index = $(this).val();
 			}
-			if(index == null) {
+			if(index === null) {
 				index = $("#WMEAutoUR_Inital_Select").val();
 			}
 			$("#WMEAutoUR_Inital_Comment").val(WMEAutoUR.options.messages[index]);
@@ -622,7 +670,7 @@ function WMEAutoUR_Create() {
 			$('#WMEAutoUR_Insert_Select').val(index);
 
 			try {
-				if($("#update-request-panel textarea").length!=0) {
+				if($("#update-request-panel textarea").length!==0) {
 					WMEAutoUR.Messages.Insert();
 				} else {
 					setTimeout(WMEAutoUR.Messages.Insert, 1000);
@@ -649,8 +697,28 @@ function WMEAutoUR_Create() {
 		 */
 		insertFromSelect: function() {
 				$('#update-request-panel textarea').html(WMEAutoUR.options.messages[$('#WMEAutoUR_Insert_Select').val()]);
+		},
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.11.12RE
+		 */
+		Close: function() {
+			$(".problem-panel-navigation button.close-button").trigger('click');
+			return;
+		},
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.11.12RE
+		 */
+		ShowComment: function() {
+			if(!$("form.panel-action btn.toggle-comment-view").hasClass('comment-view-shown')) {
+				$("form.panel-action btn.toggle-comment-view").trigger('click')
+			}
+			return;
 		}
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//----------------------  END STORAGE/SETTINGS?MESSAGES FUNCTIONS  ---------------------------------------------------------------------------
@@ -672,7 +740,7 @@ function WMEAutoUR_Create() {
 		info_txt = info_txt + '<b>ct13</b><br>';
 		info_txt = info_txt + '<b>RickZAbel</b><br>';
 		$('span[id="WME_AutoUR_Info"]').html(info_txt);
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -685,7 +753,7 @@ function WMEAutoUR_Create() {
 			case 'block':	$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","none");		break;
 			default:		$("#WME_AutoUR_main .WME_AutoUR_main_right").css("display","block");	break;
 		}
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -697,7 +765,7 @@ function WMEAutoUR_Create() {
 		window.clearInterval(WMEAutoUR.Intervals.getActive);
 		window.clearInterval(WMEAutoUR.Intervals.SaveSettings);
 		WMEAutoUR.Settings.Save();
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -708,7 +776,7 @@ function WMEAutoUR_Create() {
 		console.info("WME-AutoUR Restarting...");
 		WMEAutoUR.Intervals.getActive = window.setInterval(WMEAutoUR.UR.getActive,250);
 		WMEAutoUR.Intervals.SaveSettings = window.setInterval(WMEAutoUR.Settings.Save,30000);
-	}
+	};
 
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -742,13 +810,13 @@ function WMEAutoUR_Create_FloatUI() {
 		$(MainDIV).append(WMEAutoUR_FloatingUI.RightSubDIV);
 
 		// See if the div is already created //
-		if ($("#WME_AutoUR_main").length==0) {
+		if ($("#WME_AutoUR_main").length===0) {
 			$("#panels-container").append(MainDIV);
 			console.info("WME-WMEAutoUR_FloatingUI: Loaded Pannel");
 		}
 
 		// See if the div is already created //
-		if ($("#WME_AutoUR_main_toggle").length==0) {
+		if ($("#WME_AutoUR_main_toggle").length===0) {
 			WMEAutoUR_FloatingUI.MainDIVtoggle();
 		}
 
@@ -775,7 +843,7 @@ function WMEAutoUR_Create_FloatUI() {
 									.click(WMEAutoUR_FloatingUI.hideWindow);
 
 		$("#edit-buttons").append(MainToggle);
-	}
+	};
 	/**
 	 *@since version 0.10.0
 	 */
@@ -789,7 +857,7 @@ function WMEAutoUR_Create_FloatUI() {
 							WMEAutoUR.off();	break;
 			default:		$("#WME_AutoUR_main").css("display","block");	break;
 		}
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -809,7 +877,7 @@ function WMEAutoUR_Create_FloatUI() {
 		$(MainDIV).css("display","block");
 
 		return MainDIV;
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -873,7 +941,7 @@ function WMEAutoUR_Create_FloatUI() {
 						.attr("title","Double click to reload list of URs"));
 
 		return MainDIV_left;
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -929,7 +997,7 @@ function WMEAutoUR_Create_FloatUI() {
 		WMEAutoUR_FloatingUI.createSelect(select);
 
 		return MainDIV_right;
-	}
+	};
 
 	/**
 	*@since version 0.6.1
@@ -938,14 +1006,14 @@ function WMEAutoUR_Create_FloatUI() {
 
 		$.each(WMEAutoUR.options.names,function(i,v) {
 			if(v) {
-				var opt = $('<option>')
+				var opt = $('<option>');
 				$(opt).attr('value',i);
 				$(opt).html(v);
 				$(select).append(opt);
 			}
 		}
 		);
-	}
+	};
 
 
 	WMEAutoUR_FloatingUI.init();
@@ -990,7 +1058,7 @@ function WMEAutoUR_Create_TabbedUI() {
 			console.info("WME-WMEAutoUR_TabbedUI: Loaded Pannel");
 		}
 
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	/**
@@ -1007,7 +1075,7 @@ function WMEAutoUR_Create_TabbedUI() {
 							$("#WMEAutoUR_TabbedUI_toggle").html("+");
 							WMEAutoUR.off();	break;
 		}
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	/**
@@ -1027,7 +1095,7 @@ function WMEAutoUR_Create_TabbedUI() {
 								.css("display","block");
 
 		return MainTAB;
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	/**
@@ -1066,7 +1134,7 @@ function WMEAutoUR_Create_TabbedUI() {
 									  .click(WMEAutoUR_TabbedUI.hideWindow));
 
 		return mainTitle;
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	/**
@@ -1107,7 +1175,7 @@ function WMEAutoUR_Create_TabbedUI() {
 		$(mainTabs).append(tabs);
 
 		return mainTabs;
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	/**
@@ -1123,7 +1191,7 @@ function WMEAutoUR_Create_TabbedUI() {
 							  .addClass("tab-content");
 
 		return TabsBodyContainer;
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1187,17 +1255,17 @@ function WMEAutoUR_Create_TabbedUI() {
 							  .attr("title","Change filter between Initial-Stale-Dead."));
 
 		$(editTAB).append($("<button>Send</button>")
-							  //.dblclick(WMEAutoUR.showHideTools)
+							  //.click(WMEAutoUR.Messages.sendClose)
 							  .attr("disabled","true")
 							  .attr("title","Insert message, MARK OPEN, and close UR edit window. "));
 
 		$(editTAB).append($("<button>Solve</button>")
-							  //.dblclick(WMEAutoUR.showHideTools)
+							  //.click(WMEAutoUR.Messages.sendSolve)
 							  .attr("disabled","true")
 							  .attr("title","Insert message, <b style='color:red;'>MARK SOLVED.</b>"));
 
 		$(editTAB).append($("<button>Not ID</button>")
-							//.dblclick(WMEAutoUR.showHideTools)
+							  //.click(WMEAutoUR.Messages.sendNI)
 							  .attr("disabled","true")
 							  .attr("title","Insert message, <b style='color:red;'>MARK NOT IDENTIFIED.</b>"));
 
@@ -1223,7 +1291,7 @@ function WMEAutoUR_Create_TabbedUI() {
 
 
 		return editTAB;
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1283,7 +1351,6 @@ function WMEAutoUR_Create_TabbedUI() {
 										   )
 									.append($("<textarea>").attr("id","UR_Stale_1_Comment")
 														  .attr("disabled","true")
-														  .css("float","left")
 														  .css("height","125px")
 														  .css("position","relative")
 														  .css("float","left")
@@ -1291,6 +1358,15 @@ function WMEAutoUR_Create_TabbedUI() {
 														  .css("width","200px")
 														  .css("clear","both")
 														  .html(WMEAutoUR.options.stale[1].Comment)
+											)
+									.append($("<span>").css("position","relative")
+														.css("float","left")
+														.css("text-align","left")
+														.css("margin","5px 0")
+														.css("width","200px")
+														.css("clear","both")
+														.css("color","#000000")
+														.html("Days since last comment.")
 											)
 									.append($("<input>").attr("type","text")
 														.attr("id","UR_Stale_1_Days")
@@ -1325,6 +1401,15 @@ function WMEAutoUR_Create_TabbedUI() {
 														  .css("clear","both")
 														  .html(WMEAutoUR.options.stale[2].Comment)
 											)
+									.append($("<span>").css("position","relative")
+														.css("float","left")
+														.css("text-align","left")
+														.css("margin","5px 0")
+														.css("width","200px")
+														.css("clear","both")
+														.css("color","#000000")
+														.html("Days since last comment.")
+											)
 									.append($("<input>").attr("type","text")
 														.attr("id","UR_Stale_2_Days")
 														.attr("disabled","true")
@@ -1348,7 +1433,7 @@ function WMEAutoUR_Create_TabbedUI() {
 
 
 		return msgTAB;
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1372,7 +1457,7 @@ function WMEAutoUR_Create_TabbedUI() {
 
 
 		return setTAB;
-	}
+	};
 
 	/**
 	*@since version 0.6.1
@@ -1381,13 +1466,13 @@ function WMEAutoUR_Create_TabbedUI() {
 
 		$.each(WMEAutoUR.options.names,function(i,v) {
 			if(v) {
-				var opt = $('<option>')
+				var opt = $('<option>');
 				$(opt).attr('value',i);
 				$(opt).html(v);
 				$(select).append(opt);
 			}
 		});
-	}
+	};
 
 	WMEAutoUR_TabbedUI.init();
 }
