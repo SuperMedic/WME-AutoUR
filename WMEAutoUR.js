@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.12.3
+// @version     0.12.4
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -11,6 +11,7 @@
 
 
 /* Changelog
+ * 0.12.4 - Fixed issue #31, undef options var
  * 0.12.3 - LINT fixes, Fixed jump to 1st UR, Fixed following issues #13,#29.1
  * 0.12.2 - Reset now repopulates select, New select added to front page and tied into reset
  * 0.12.1 - Confined Auto selection to screen, enabled Initial/Stale/Dead/None filters, disabled send/solve/notID buttons
@@ -81,7 +82,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.12.3';
+	WMEAutoUR.version = '0.12.4';
 	WMEAutoUR.logPrefix = 'WMEAutoUR';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -121,7 +122,7 @@ function WMEAutoUR_Create() {
 	 */
 	WMEAutoUR.init = function() {
 		// --- Setup Options --- //
-		WMEAutoUR.options = {};
+		WMEAutoUR.Options = {};
 		// --- Setup Intervals --- //
 		WMEAutoUR.Intervals = {};
 		// --- Load Settings --- //
@@ -338,7 +339,7 @@ function WMEAutoUR_Create() {
 			 */
 			stale: function(cur_id,update) {
 				if(wazeModel.updateRequestSessions.objects[cur_id].comments.length == 1) {
-					if((update > WMEAutoUR.options.stale[1].Days)) {
+					if((update > WMEAutoUR.Options.stale[1].Days)) {
 						WMEAutoUR.Auto.UR_len++;
 						WMEAutoUR.Auto.UR_WORK_IDs.push(cur_id);
 					}
@@ -351,7 +352,7 @@ function WMEAutoUR_Create() {
 			 */
 			dead: function(cur_id,update) {
 				if(wazeModel.updateRequestSessions.objects[cur_id].comments.length == 2) {
-					if((update > WMEAutoUR.options.stale[2].Days)) {
+					if((update > WMEAutoUR.Options.stale[2].Days)) {
 						WMEAutoUR.Auto.UR_len++;
 						WMEAutoUR.Auto.UR_WORK_IDs.push(cur_id);
 					}
@@ -514,7 +515,7 @@ function WMEAutoUR_Create() {
 		Save: function() {
 			console.info("WME-AutoUR: Save Settings");
 
-			localStorage.setItem('WME_AutoUR', JSON.stringify(WMEAutoUR.options));
+			localStorage.setItem('WME_AutoUR', JSON.stringify(WMEAutoUR.Options));
 		},
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -530,24 +531,24 @@ function WMEAutoUR_Create() {
 				newOpts = JSON.parse(localStorage.WME_AutoUR);
 			}
 
-			if(newOpts !== null) {
-				WMEAutoUR.options = newOpts;
+			if(typeof(newOpts) !== 'undefined') {
+				WMEAutoUR.Options = newOpts;
 			}
 
 			// --- Load Defaults --- //
 			var field = 0;
 			try {
-			  console.info("Name test: "+WMEAutoUR.options.names[6]);
+			  console.info("Name test: "+WMEAutoUR.Options.names[6]);
 			} catch(e) {
 				field += 1;
 			}
 			try {
-			  console.info("Message test: "+WMEAutoUR.options.messages[6]);
+			  console.info("Message test: "+WMEAutoUR.Options.messages[6]);
 			} catch(e) {
 				field += 2;
 			}
 			try {
-			  console.info("Stale test: "+WMEAutoUR.options.stale[1].Days);
+			  console.info("Stale test: "+WMEAutoUR.Options.stale[1].Days);
 			} catch(e) {
 				field += 4;
 			}
@@ -595,21 +596,21 @@ function WMEAutoUR_Create() {
 			if((typeof(arguments[0]) == 'number')) {
 				var field = arguments[0];
 				if(field >= 4) {
-					WMEAutoUR.options.stale = def_staleMsgs;
+					WMEAutoUR.Options.stale = def_staleMsgs;
 					field -= 4;
 				}
 				if(field >= 2) {
-					WMEAutoUR.options.messages = def_messages;
+					WMEAutoUR.Options.messages = def_messages;
 					field -= 2;
 				}
 				if(field == 1) {
-					WMEAutoUR.options.names = def_names;
+					WMEAutoUR.Options.names = def_names;
 					field -= 1;
 				}
 			} else {
-				WMEAutoUR.options.names = def_names;
-				WMEAutoUR.options.messages = def_messages;
-				WMEAutoUR.options.stale = def_staleMsgs;
+				WMEAutoUR.Options.names = def_names;
+				WMEAutoUR.Options.messages = def_messages;
+				WMEAutoUR.Options.stale = def_staleMsgs;
 			}
 
 			WMEAutoUR.Settings.Save();
@@ -645,7 +646,7 @@ function WMEAutoUR_Create() {
 		 *@since version 0.5.0
 		 */
 		Save: function() {
-			WMEAutoUR.options.messages[$("#WMEAutoUR_Inital_Select").val()] = $("#WMEAutoUR_Inital_Comment").val();
+			WMEAutoUR.Options.messages[$("#WMEAutoUR_Inital_Select").val()] = $("#WMEAutoUR_Inital_Comment").val();
 			WMEAutoUR.Settings.Save();
 		},
 
@@ -665,8 +666,8 @@ function WMEAutoUR_Create() {
 			if(index === null) {
 				index = $("#WMEAutoUR_Inital_Select").val();
 			}
-			$("#WMEAutoUR_Inital_Comment").val(WMEAutoUR.options.messages[index]);
-			$("#WME_AutoUR_MSG_Display").html(WMEAutoUR.options.messages[index]);
+			$("#WMEAutoUR_Inital_Comment").val(WMEAutoUR.Options.messages[index]);
+			$("#WME_AutoUR_MSG_Display").html(WMEAutoUR.Options.messages[index]);
 			$('#WMEAutoUR_Insert_Select').val(index);
 
 			try {
@@ -687,7 +688,7 @@ function WMEAutoUR_Create() {
 		 *@since version 0.3.0
 		 */
 		Insert: function() {
-				$('#update-request-panel textarea').html(WMEAutoUR.options.messages[Waze.updateRequestsControl.currentRequest.attributes.type]);
+				$('#update-request-panel textarea').html(WMEAutoUR.Options.messages[Waze.updateRequestsControl.currentRequest.attributes.type]);
 		},
 
 
@@ -696,7 +697,7 @@ function WMEAutoUR_Create() {
 		 *@since version 0.3.0
 		 */
 		insertFromSelect: function() {
-				$('#update-request-panel textarea').html(WMEAutoUR.options.messages[$('#WMEAutoUR_Insert_Select').val()]);
+				$('#update-request-panel textarea').html(WMEAutoUR.Options.messages[$('#WMEAutoUR_Insert_Select').val()]);
 		},
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -1004,7 +1005,7 @@ function WMEAutoUR_Create_FloatUI() {
 	*/
 	WMEAutoUR_FloatingUI.createSelect = function(select) {
 
-		$.each(WMEAutoUR.options.names,function(i,v) {
+		$.each(WMEAutoUR.Options.names,function(i,v) {
 			if(v) {
 				var opt = $('<option>');
 				$(opt).attr('value',i);
@@ -1357,7 +1358,7 @@ function WMEAutoUR_Create_TabbedUI() {
 														  .css("margin-top","5px")
 														  .css("width","200px")
 														  .css("clear","both")
-														  .html(WMEAutoUR.options.stale[1].Comment)
+														  .html(WMEAutoUR.Options.stale[1].Comment)
 											)
 									.append($("<span>").css("position","relative")
 														.css("float","left")
@@ -1371,7 +1372,7 @@ function WMEAutoUR_Create_TabbedUI() {
 									.append($("<input>").attr("type","text")
 														.attr("id","UR_Stale_1_Days")
 														.attr("disabled","true")
-														.attr("value",WMEAutoUR.options.stale[1].Days)
+														.attr("value",WMEAutoUR.Options.stale[1].Days)
 														.css("height","24px")
 														.css("width","36px")
 														.css("text-align","center")
@@ -1399,7 +1400,7 @@ function WMEAutoUR_Create_TabbedUI() {
 														  .css("margin-top","5px")
 														  .css("width","200px")
 														  .css("clear","both")
-														  .html(WMEAutoUR.options.stale[2].Comment)
+														  .html(WMEAutoUR.Options.stale[2].Comment)
 											)
 									.append($("<span>").css("position","relative")
 														.css("float","left")
@@ -1413,7 +1414,7 @@ function WMEAutoUR_Create_TabbedUI() {
 									.append($("<input>").attr("type","text")
 														.attr("id","UR_Stale_2_Days")
 														.attr("disabled","true")
-														.attr("value",WMEAutoUR.options.stale[2].Days)
+														.attr("value",WMEAutoUR.Options.stale[2].Days)
 														.css("height","24px")
 														.css("width","36px")
 														.css("text-align","center")
@@ -1464,7 +1465,7 @@ function WMEAutoUR_Create_TabbedUI() {
 	*/
 	WMEAutoUR_TabbedUI.createSelect = function(select) {
 
-		$.each(WMEAutoUR.options.names,function(i,v) {
+		$.each(WMEAutoUR.Options.names,function(i,v) {
 			if(v) {
 				var opt = $('<option>');
 				$(opt).attr('value',i);
