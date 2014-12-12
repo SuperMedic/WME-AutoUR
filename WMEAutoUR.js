@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.12.5
+// @version     0.12.6
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -11,6 +11,7 @@
 
 
 /* Changelog
+ * 0.12.6 - UI update
  * 0.12.5 - Removed Floating_UI, Send/Solve/NI buttons enabled, Send CB, Auto-advance CB
  * 0.12.4 - Fixed issue #31, undef options var
  * 0.12.3 - LINT fixes, Fixed jump to 1st UR, Fixed following issues #13,#29.1
@@ -83,7 +84,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.12.5';
+	WMEAutoUR.version = '0.12.6';
 	WMEAutoUR.logPrefix = 'WMEAutoUR';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -1083,53 +1084,57 @@ function WMEAutoUR_Create_TabbedUI() {
 							  .click(WMEAutoUR.Messages.Send)
 							  .css("float","left")
 							  .css("width","55px")
-							  .css("background-color","#C5FFC5")
-							  .attr("title","Insert message, MARK OPEN, and close UR edit window. "));
+							  //.css("background-color","#C5FFC5")
+							  .attr("title","Insert message, MARK OPEN "));
 
 		$(actsBar).append($("<button>Solve</button>")
 							  .click(WMEAutoUR.Messages.changeStatus)
 							  .attr("data-state","0")
 							  .css("float","left")
 							  .css("width","55px")
-							  .css("background-color","#FFC5C5")
-							  .attr("title","Insert message, <b style='color:red;'>MARK SOLVED.</b>"));
+							  //.css("background-color","#FFC5C5")
+							  .attr("title","Mark Solved."));
 
 		$(actsBar).append($("<button>Not ID</button>")
 							  .click(WMEAutoUR.Messages.changeStatus)
 							  .attr("data-state","1")
 							  .css("float","left")
 							  .css("width","55px")
-							  .css("background-color","#FFC5C5")
-							  .attr("title","Insert message, <b style='color:red;'>MARK NOT IDENTIFIED.</b>"));
+							  //.css("background-color","#FFC5C5")
+							  .attr("title","Mark Not Identified."));
 
-		$(actsBar).append($("<button></button>")
+		$(actsBar).append($("<button>Get URs</button>")
 							  //.click(WMEAutoUR.Messages.sendNI)
 							  .attr("disabled","true")
 							  .css("float","left")
 							  .css("width","55px")
-							  .attr("title","Insert message, <b style='color:red;'>MARK NOT IDENTIFIED.</b>"));
+							  .css("font-size","12px")
+							  .css("line-height","12px")
+							  .css("color","#C8C8C83")
+							  .attr("title","Mark Not Identified."));
 
 
 		var setsBar = $('<div>').css("width","275px")
+								.css("margin-top","2px")
 								.css("clear","both");
 		$(editTAB).append($(setsBar));
 
 		var setsBarSub1 = $('<div>').css("width","55px")
 									.css("height","24px")
-									.css("border-right","1px solid black")
+									//.css("border-right","1px solid black")
 									.css("float","left");
-		$(setsBar).append($(setsBarSub1));
+		//$(setsBar).append($(setsBarSub1));
 
 
 
 		var setsBarSub2 = $('<div>').css("width","55px")
 									.css("height","24px")
-									.css("border-right","1px solid black")
-									.css("background-color","#C5FFC5")
+									//.css("border-right","1px solid black")
+									//.css("background-color","#C5FFC5")
 									.css("float","left");
 		$(setsBar).append($(setsBarSub2));
 		$(setsBarSub2).append($("<label>")
-							  .html("Auto")
+							  .html("Adv.")
 							  .attr("for","WMEAutoUR_AutoAdvance_CB")
 							  .attr("title","Enable auto advance with Send/Solve/NI buttons.")
 							  .css("color","black")
@@ -1138,33 +1143,29 @@ function WMEAutoUR_Create_TabbedUI() {
 		$(setsBarSub2).append($("<input>")
 							  .attr("id","WMEAutoUR_AutoAdvance_CB")
 							  .attr("type","checkbox")
-							  .css("float","right")
-							  .css("margin-left","2px")
+							  .css("float","left")
+							  .css("margin-left","5px")
 							  .attr("title","Enable auto advance with Send/Solve/NI buttons."));
 
 
 		var setsBarSub3 = $('<div>').css("width","110px")
 									.css("height","24px")
-									.css("border-right","1px solid black")
-									.css("background-color","#FFC5C5")
+									//.css("border-right","1px solid black")
+									//.css("background-color","#FFC5C5")
 									.css("float","left");
 		$(setsBar).append($(setsBarSub3));
-		var setsBarSub3a = $('<div>').css("width","55px")
-									 .css("margin","0 auto")
-									 .css("display","block");
-		$(setsBarSub3).append($(setsBarSub3a));
-		$(setsBarSub3a).append($("<label>")
+		$(setsBarSub3).append($("<label>")
 							  .html("Send")
 							  .attr("for","WMEAutoUR_SendMessage_CB")
 							  .attr("title","Send message with Solve/NI buttons.")
 							  .css("color","black")
 							  .css("float","left"));
 
-		$(setsBarSub3a).append($("<input>")
+		$(setsBarSub3).append($("<input>")
 							  .attr("id","WMEAutoUR_SendMessage_CB")
 							  .attr("type","checkbox")
-							  .css("float","right")
-							  .css("margin-left","2px")
+							  .css("float","left")
+							  .css("margin-left","5px")
 							  .attr("title","Send message with Solve/NI buttons."));
 
 
