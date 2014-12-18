@@ -11,6 +11,7 @@
 
 
 /* Changelog
+ * 0.12.11 - FF text issue fixed
  * 0.12.10 - Beta Updates, Fixed issues: #38 #18
  * 0.12.9 - Find UR Fx updated.
  * 0.12.8 - UI update
@@ -386,7 +387,7 @@ function WMEAutoUR_Create() {
 			 */
 			stale: function(cur_id,update) {
 				if(wazeModel.updateRequestSessions.objects[cur_id].comments.length == 1) {
-					if((update > WMEAutoUR.Options.stale[1].Days)) {
+					if((update > WMEAutoUR.Options.settings.staleDays)) {
 						WMEAutoUR.Auto.UR_len++;
 						WMEAutoUR.Auto.UR_WORK_IDs.push(cur_id);
 					}
@@ -399,7 +400,7 @@ function WMEAutoUR_Create() {
 			 */
 			dead: function(cur_id,update) {
 				if(wazeModel.updateRequestSessions.objects[cur_id].comments.length == 2) {
-					if((update > WMEAutoUR.Options.stale[2].Days)) {
+					if((update > WMEAutoUR.Options.settings.deadDays)) {
 						WMEAutoUR.Auto.UR_len++;
 						WMEAutoUR.Auto.UR_WORK_IDs.push(cur_id);
 					}
@@ -570,6 +571,9 @@ function WMEAutoUR_Create() {
 		Load: function() {
 
 			console.info("WME-AutoUR: Load Settings");
+			WMEAutoUR.Options.names = [];
+			WMEAutoUR.Options.messages = [];
+			WMEAutoUR.Options.settings = [];
 			var newOpts;
 			var savedOpt = localStorage.WME_AutoUR;
 			if(savedOpt) {
@@ -583,14 +587,19 @@ function WMEAutoUR_Create() {
 			// --- Load Defaults --- //
 			var field = 0;
 			try {
-			  console.info("Name test: "+WMEAutoUR.Options.names[6]);
+			  console.info("Name test: "+WMEAutoUR.Options.names[50]);
 			} catch(e) {
 				field += 1;
 			}
 			try {
-			  console.info("Message test: "+WMEAutoUR.Options.messages[6]);
+			  console.info("Message test: "+WMEAutoUR.Options.messages[50]);
 			} catch(e) {
 				field += 2;
+			}
+			try {
+			  console.info("Settings test: "+WMEAutoUR.Options.settings['staleDays']);
+			} catch(e) {
+				field += 4;
 			}
 
 			WMEAutoUR.Settings.setDefault(field);
@@ -634,9 +643,17 @@ function WMEAutoUR_Create() {
 			def_messages[50] = "Without further information this report will be closed soon.";
 			def_messages[51] = "Without further information we are unable fix this report. Please resubmit with more information.";
 
+			var def_settings = [];
+			def_settings['staleDays'] = 7;
+			def_settings['deadDays'] = 7;
+
 			// --- Load Defaults --- //
 			if((typeof(arguments[0]) == 'number')) {
 				var field = arguments[0];
+				if(field >= 4) {
+					WMEAutoUR.Options.settings = def_settings;
+					field -= 4;
+				}
 				if(field >= 2) {
 					WMEAutoUR.Options.messages = def_messages;
 					field -= 2;
@@ -1095,7 +1112,7 @@ function WMEAutoUR_Create_TabbedUI() {
 							.css("margin","0 auto")
 							.css("padding","3px")
 							.css("background-color","#000000")
-							.css("border-radius","5px")
+							.css("border-radius","3px")
 							.html("Auto Off")
 							.dblclick(WMEAutoUR.Auto.getIDs)
 							.attr("title","Double click to load/reload list of URs"));
@@ -1103,6 +1120,7 @@ function WMEAutoUR_Create_TabbedUI() {
 
 		var actsBar = $('<div>').css("width","100%")
 								.css("clear","both")
+								.css("font-size","12px")
 								.css("padding-top","2px");
 		$(editTAB).append($(actsBar));
 
@@ -1113,6 +1131,7 @@ function WMEAutoUR_Create_TabbedUI() {
 							  .css("float","left")
 							  .css("background-color","White")
 							  .css("color","Black")
+							  .css("border-radius","5px")
 							  .css("width","55px")
 							  .attr("title","Change filter between Initial-Stale-Dead."));
 
@@ -1231,6 +1250,8 @@ function WMEAutoUR_Create_TabbedUI() {
 	// ------- SETTINGS TAB ------- //
 	WMEAutoUR_TabbedUI.SettingsTAB = function() {
 
+		var clearDIV = $("<div>").css("clear","both");
+
 		var setTAB = $('<div>').attr("id",'WMEAutoUR_SET_TAB')
 								//.css("padding","10px")
 								.css("max-width","275px")
@@ -1249,9 +1270,9 @@ function WMEAutoUR_Create_TabbedUI() {
 		WMEAutoUR_TabbedUI.createSelect(select);
 
 
-		// ---  INITIAL COMMENT --- //
+		// ---  MESSAGES --- //
 		$(setTAB).append($("<div>").css("clear","both")
-									.css("height","156px")
+									//.css("height","156px")
 									.css("margin-bottom","10px")
 									.append($("<h3>").html("Messages")
 													  .css("color","black")
@@ -1267,7 +1288,41 @@ function WMEAutoUR_Create_TabbedUI() {
 														  .css("clear","both")
 										   )
 									.append(select)
-						  );
+						  ).append(clearDIV);
+
+		// ---  MESSAGES --- //
+		$(setTAB).append($("<div>").css("clear","both")
+									//.css("height","156px")
+									.css("margin-bottom","10px")
+									.append($("<h3>").html("Filters")
+													  .css("color","black")
+													  .css("text-align","left")
+										   )
+									.append($("<input>").attr("type","text")
+														.attr("id","UR_Stale_Days")
+														.attr("disabled","true")
+														.attr("value",WMEAutoUR.Options.settings.staleDays)
+														.css("height","24px")
+														.css("width","36px")
+														.css("text-align","center")
+														.css("position","relative")
+														.css("float","left")
+														.css("clear","both")
+														.css("padding-top","5px")
+											)
+									.append($("<input>").attr("type","text")
+														.attr("id","UR_Dead_Days")
+														.attr("disabled","true")
+														.attr("value",WMEAutoUR.Options.settings.deadDays)
+														.css("height","24px")
+														.css("width","36px")
+														.css("text-align","center")
+														.css("position","relative")
+														.css("float","left")
+														.css("clear","both")
+														.css("padding-top","5px")
+											)
+						  ).append(clearDIV);
 
 
 
@@ -1285,7 +1340,7 @@ function WMEAutoUR_Create_TabbedUI() {
 				  .attr("title","Reset settings to defaults."));
 
 
-		$(setTAB).append($("<div>").css("clear","both"));
+		$(setTAB).append(clearDIV);
 
 
 		return setTAB;
