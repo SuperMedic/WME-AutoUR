@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.12.10
+// @version     0.12.11
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -89,7 +89,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.12.10';
+	WMEAutoUR.version = '0.12.11';
 	WMEAutoUR.logPrefix = 'WMEAutoUR';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
