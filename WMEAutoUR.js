@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.13.1
+// @version     0.13.2
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -13,6 +13,7 @@
 
 
 /* Changelog
+ * 0.13.2 - Issues Fixed/Closed: #39  Added insert offset along with setting to tune offset
  * 0.13.1 - Stale/Dead messages tied to filters Issues Fixed/Closed: #36 #26 #2 #8
  * 0.13.0 - Icon added (Thank you RickZAbel)
  * 0.12.11 - FF text issue fixed
@@ -93,7 +94,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.13.1';
+	WMEAutoUR.version = '0.13.2';
 	WMEAutoUR.logPrefix = 'WMEAutoUR';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -184,20 +185,12 @@ function WMEAutoUR_Create() {
 				console.info("Make Beta UR Panel draggable");
 			}
 			console.info("WME-AutoUR getActive");
-			//if(Waze.updateRequestsControl.currentRequest) {
-				//var urID = Waze.updateRequestsControl.currentRequest.attributes.id;
-				WMEAutoUR.UR.selectedURid = $(this).attr('data-id');
-				console.info(WMEAutoUR.UR.selectedURid);
-				//if((WMEAutoUR.activeUR !== urID)) {
-					//WMEAutoUR.activeUR = urID;
-					$('span[id="WME_AutoUR_Info"]').html(WMEAutoUR.UR.getInfo(WMEAutoUR.UR.selectedURid));
-					//WMEAutoUR.Messages.Change(Waze.updateRequestsControl.currentRequest.attributes.type);
-					WMEAutoUR.Messages.Change(Waze.model.mapUpdateRequests.objects[WMEAutoUR.UR.selectedURid].attributes.type);
-					WMEAutoUR.Messages.ShowComment();
-				//}
-			//} else {
-			  //WMEAutoUR.activeUR = null;
-			//}
+			WMEAutoUR.UR.selectedURid = $(this).attr('data-id');
+			console.info(WMEAutoUR.UR.selectedURid);
+			$('span[id="WME_AutoUR_Info"]').html(WMEAutoUR.UR.getInfo(WMEAutoUR.UR.selectedURid));
+			//WMEAutoUR.Messages.Change(Waze.updateRequestsControl.currentRequest.attributes.type);
+			WMEAutoUR.Messages.ChangeEditor(Waze.model.mapUpdateRequests.objects[WMEAutoUR.UR.selectedURid].attributes.type);
+			WMEAutoUR.Messages.ShowComment();
 		},
 
 		/**
@@ -528,7 +521,7 @@ function WMEAutoUR_Create() {
 			$('span[id="WME_AutoUR_Info"]').html(WMEAutoUR.UR.getInfo(URid));
 			console.info("Set Info");
 			//WMEAutoUR.Messages.Change(W.model.mapUpdateRequests.objects[URid].attributes.type);
-			WMEAutoUR.Messages.Change(Waze.model.mapUpdateRequests.objects[URid].attributes.type);
+			WMEAutoUR.Messages.ChangeEditor(Waze.model.mapUpdateRequests.objects[URid].attributes.type);
 			console.info("Change Message");
 			WMEAutoUR.Messages.ShowComment();
 			console.info("Show Comment");
@@ -580,10 +573,30 @@ function WMEAutoUR_Create() {
 		 *@since version 0.4.1
 		 */
 		Save: function() {
-			console.info("WME-AutoUR: Save Settings");
+			console.info("WME-AutoUR: Save All");
 			WMEAutoUR.Options.settings['staleDays'] = $('#UR_Stale_Days').val();
 			WMEAutoUR.Options.settings['deadDays'] = $('#UR_Dead_Days').val();
 
+			WMEAutoUR.Settings.saveSettings();
+			WMEAutoUR.Settings.saveToStorage();
+		},
+
+		/**
+		 *@since version 0.4.1
+		 */
+		saveSettings: function() {
+			console.info("WME-AutoUR: Save Settings");
+			WMEAutoUR.Options.settings['staleDays'] = 			$('#UR_Stale_Days').val();
+			WMEAutoUR.Options.settings['deadDays'] = 			$('#UR_Dead_Days').val();
+			WMEAutoUR.Options.settings['firstURTextareaTime'] = $('#UR_First_TA_Time').val();
+			WMEAutoUR.Options.settings['nextURTextareaTime'] = 	$('#UR_Next_TA_Time').val();
+
+		},
+
+		/**
+		 *@since version 0.4.1
+		 */
+		saveToStorage: function() {
 			localStorage.setItem('WME_AutoUR', JSON.stringify(WMEAutoUR.Options));
 		},
 
@@ -594,9 +607,9 @@ function WMEAutoUR_Create() {
 		Load: function() {
 
 			console.info("WME-AutoUR: Load Settings");
-			WMEAutoUR.Options.names = [];
-			WMEAutoUR.Options.messages = [];
-			WMEAutoUR.Options.settings = {};
+			//WMEAutoUR.Options.names = [];
+			//WMEAutoUR.Options.messages = [];
+			//WMEAutoUR.Options.settings = {};
 			var newOpts;
 			var savedOpt = localStorage.WME_AutoUR;
 			if(savedOpt) {
@@ -609,22 +622,22 @@ function WMEAutoUR_Create() {
 
 			// --- Load Defaults --- //
 			var field = 0;
-			try {
+			if(WMEAutoUR.Options.names[50]) {
 			  console.info("Name test: "+WMEAutoUR.Options.names[50]);
-			} catch(e) {
+			} else {
 				field += 1;
 			}
-			try {
+			if(WMEAutoUR.Options.messages[50]) {
 			  console.info("Message test: "+WMEAutoUR.Options.messages[50]);
-			} catch(e) {
+			} else {
 				field += 2;
 			}
-			try {
-			  console.info("Settings test: "+WMEAutoUR.Options.settings['staleDays']);
-			} catch(e) {
+			if(WMEAutoUR.Options.settings['nextURTextareaTime']) {
+			  console.info("Settings test: "+WMEAutoUR.Options.settings['nextURTextareaTime']);
+			} else {
 				field += 4;
 			}
-
+console.info(field);
 			if(field) {
 				WMEAutoUR.Settings.setDefault(field);
 			}
@@ -638,6 +651,7 @@ function WMEAutoUR_Create() {
 		 *@since version 0.12.1
 		 */
 		setDefault: function() {
+			console.info("setDefault");
 			// --- Setup Defaults --- //
 			var def_names = [];
 			def_names[6] = "Incorrect turn";
@@ -672,6 +686,8 @@ function WMEAutoUR_Create() {
 			var def_settings = {};
 			def_settings['staleDays'] = 7;
 			def_settings['deadDays'] = 7;
+			def_settings['firstURTextareaTime'] = 1000;
+			def_settings['nextURTextareaTime'] = 500;
 
 			// --- Load Defaults --- //
 			if((typeof(arguments[0]) == 'number')) {
@@ -694,7 +710,9 @@ function WMEAutoUR_Create() {
 				WMEAutoUR.Options.settings = def_settings;
 			}
 
-			WMEAutoUR.Settings.Save();
+			console.info(WMEAutoUR.Options.settings);
+
+			WMEAutoUR.Settings.saveToStorage();
 
 		},
 
@@ -705,6 +723,17 @@ function WMEAutoUR_Create() {
 		Reset: function() {
 			console.info("WME-AutoUR: RESET");
 			WMEAutoUR.Settings.setDefault(7);
+
+			WMEAutoUR.Settings.resetMessages();
+			WMEAutoUR.Settings.resetSettings();
+		},
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.5.0
+		 */
+		resetMessages: function() {
+			console.info("WME-AutoUR: reset messages");
 			$('#WMEAutoUR_Settings_Select').empty();
 			$('#WMEAutoUR_Insert_Select').empty();
 
@@ -712,6 +741,18 @@ function WMEAutoUR_Create() {
 			$('#WME_AutoUR_MSG_Display').html('');
 			WMEAutoUR_TabbedUI.createSelect($('#WMEAutoUR_Settings_Select'));
 			WMEAutoUR_TabbedUI.createSelect($('#WMEAutoUR_Insert_Select'));
+		},
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.5.0
+		 */
+		resetSettings: function() {
+			console.info("WME-AutoUR: reset settings");
+			$('#UR_Stale_Days').val() =		WMEAutoUR.Options.settings['staleDays'];
+			$('#UR_Dead_Days').val() =		WMEAutoUR.Options.settings['deadDays'];
+			$('#UR_First_TA_Time').val() =	WMEAutoUR.Options.settings['firstURTextareaTime'];
+			$('#UR_Next_TA_Time').val() =	WMEAutoUR.Options.settings['nextURTextareaTime'];
 		}
 	};
 
@@ -724,8 +765,8 @@ function WMEAutoUR_Create() {
 		/**
 		 *@since version 0.5.0
 		 */
-		Save: function() {
-			WMEAutoUR.Options.messages[$("#WMEAutoUR_Inital_Select").val()] = $("#WMEAutoUR_Inital_Comment").val();
+		SaveSettingSelect: function() {
+			WMEAutoUR.Options.messages[$(this).val()] = $("#WMEAutoUR_Inital_Comment").val();
 			WMEAutoUR.Settings.Save();
 		},
 
@@ -733,7 +774,23 @@ function WMEAutoUR_Create() {
 		/**
 		 *@since version 0.5.0
 		 */
-		Change: function() {
+		ChangeSettingSelect: function() {
+			var index = $(this).val();
+
+			if(index === null) {
+				index = $("#WMEAutoUR_Settings_Select").val();
+			}
+
+			console.info(index);
+			$("#WMEAutoUR_Settings_Comment").val(WMEAutoUR.Options.messages[index]);
+			return;
+		},
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		/**
+		 *@since version 0.5.0
+		 */
+		ChangeEditor: function() {
 			var index;
 			console.info("CHANGE");
 			if((arguments.length == 1) && (typeof arguments[0] == "number")) {
@@ -743,28 +800,32 @@ function WMEAutoUR_Create() {
 				index = $(this).val();
 			}
 			if(index === null) {
-				index = $("#WMEAutoUR_Settings_Select").val();
+				index = $("#WMEAutoUR_Insert_Select").val();
 			}
+			console.info("Set ID");
 			if($("#WME_AutoUR_Filter_button").val() === '0') {
 				index = 50;
 			} else if($("#WME_AutoUR_Filter_button").val() === '1') {
 				index = 51;
 			}
+			console.info("Filter ID");
 			console.info(index);
-			$("#WMEAutoUR_Settings_Comment").val(WMEAutoUR.Options.messages[index]);
 			$("#WME_AutoUR_MSG_Display").html(WMEAutoUR.Options.messages[index]);
 			$('#WMEAutoUR_Insert_Select').val(index);
+			console.info("Ofsets: "+WMEAutoUR.Options.settings.firstURTextareaTime+" : "+WMEAutoUR.Options.settings.nextURTextareaTime)
 
 			try {
 				if($("#update-request-panel textarea").length!==0) {
-					WMEAutoUR.Messages.Insert();
+					setTimeout(WMEAutoUR.Messages.insertFromSelect, WMEAutoUR.Options.settings.nextURTextareaTime);
+					console.info("We Have TA wait 500");
 				} else {
-					setTimeout(WMEAutoUR.Messages.Insert, 1000);
+					setTimeout(WMEAutoUR.Messages.insertFromSelect, WMEAutoUR.Options.settings.firstURTextareaTime);
+					console.info("NO TA wait 1000");
 				}
 			} catch(err) {
 				console.info("WME-AutoUR: Error:"+err);
 			}
-
+			console.info("Insert/return");
 		},
 
 
@@ -776,9 +837,11 @@ function WMEAutoUR_Create() {
 			console.info("INSERT");
 			var urID = WMEAutoUR.UR.selectedURid;
 			if(WMEAutoUR.isBeta) {
-				$('form.new-comment-form .new-comment-text').html(WMEAutoUR.Options.messages[Waze.model.mapUpdateRequests.objects[urID].attributes.type]);
+				//$('form.new-comment-form .new-comment-text').html(WMEAutoUR.Options.messages[Waze.model.mapUpdateRequests.objects[urID].attributes.type]);
+				$('form.new-comment-form .new-comment-text').html(WMEAutoUR.Options.messages[$('#WMEAutoUR_Insert_Select').val()]);
 			} else {
-				$('#update-request-panel textarea').html(WMEAutoUR.Options.messages[Waze.model.mapUpdateRequests.objects[urID].attributes.type]);
+				//$('#update-request-panel textarea').html(WMEAutoUR.Options.messages[Waze.model.mapUpdateRequests.objects[urID].attributes.type]);
+				$('#update-request-panel textarea').html(WMEAutoUR.Options.messages[$('#WMEAutoUR_Insert_Select').val()]);
 			}
 		},
 
@@ -873,12 +936,12 @@ function WMEAutoUR_Create() {
 	WMEAutoUR.showDevInfo = function() {
 		var info_txt = '';
 		info_txt = info_txt + 'Created by: <b>SuperMedic</b><br>';
+		info_txt = info_txt + 'Icon: <b>RickZAbel</b><br>';
 		info_txt = info_txt + 'Beta Testers:<br>';
 		info_txt = info_txt + '<b>Stephenr1966</b><br>';
 		info_txt = info_txt + '<b>seekingserenity</b><br>';
 		info_txt = info_txt + '<b>t0cableguy</b><br>';
 		info_txt = info_txt + '<b>ct13</b><br>';
-		info_txt = info_txt + '<b>RickZAbel</b><br>';
 		$('span[id="WME_AutoUR_Info"]').html(info_txt);
 	};
 
@@ -1190,16 +1253,6 @@ function WMEAutoUR_Create_TabbedUI() {
 							  .css("width","55px")
 							  .attr("title","Mark Not Identified."));
 
-		//$(actsBar).append($("<button>Get URs</button>")
-		//					  //.click(WMEAutoUR.Messages.sendNI)
-		//					  .attr("disabled","true")
-		//					  .css("float","left")
-		//					  .css("width","55px")
-		//					  .css("font-size","12px")
-		//					  .css("line-height","12px")
-		//					  .css("color","#C8C8C83")
-		//					  .attr("title","Mark Not Identified."));
-
 
 		var setsBar = $('<div>').css("width","275px")
 								.css("margin-top","2px")
@@ -1296,8 +1349,8 @@ function WMEAutoUR_Create_TabbedUI() {
 								.attr("title","Select Message")
 								.css("width","100%")
 								.css("float","left")
-								.change(WMEAutoUR.Messages.Change)
-								.focus(WMEAutoUR.Messages.Save)
+								.change(WMEAutoUR.Messages.ChangeSettingSelect)
+								.focus(WMEAutoUR.Messages.SaveSettingSelect)
 								.css("padding-top","5px");
 
 		WMEAutoUR_TabbedUI.createSelect(select);
@@ -1323,15 +1376,15 @@ function WMEAutoUR_Create_TabbedUI() {
 									.append($("<div>").css("clear","both"))
 						  );
 
-		// ---  MESSAGES --- //
+		// ---  FILTERS --- //
 		$(setTAB).append($("<div>").css("clear","both")
 									.css("margin-bottom","10px")
 									.append($("<h3>").html("Filters")
 													  .css("color","black")
 													  .css("text-align","left")
 										   )
-									.append($("<dif>").attr("id","UR_Stale_Dead")
-													  .css("width","49%")
+									.append($("<div>").attr("id","UR_Stale_Dead")
+													  .css("width","135px")
 													  .css("position","relative")
 													  .css("float","left")
 													  .css("padding-top","5px")
@@ -1341,6 +1394,7 @@ function WMEAutoUR_Create_TabbedUI() {
 																		.css("position","relative")
 																		.css("float","left")
 																		.css("height","24px")
+																		.css("width","99px")
 																		.css("color","black")
 															  )
 													  .append($("<input>").attr("type","text")
@@ -1359,11 +1413,66 @@ function WMEAutoUR_Create_TabbedUI() {
 																		.css("position","relative")
 																		.css("float","left")
 																		.css("height","24px")
+																		.css("width","99px")
 																		.css("color","black")
 															  )
 													  .append($("<input>").attr("type","text")
 																		  .attr("id","UR_Dead_Days")
 																		  .attr("value",WMEAutoUR.Options.settings.deadDays)
+																		  .css("height","24px")
+																		  .css("width","36px")
+																		  .css("text-align","center")
+																		  .css("position","relative")
+																		  .css("float","right")
+																		  .css("padding-top","5px")
+															  )
+											)
+									.append($("<div>").css("clear","both"))
+						  );
+
+		// ---  Advanced --- //
+		$(setTAB).append($("<div>").css("clear","both")
+									.css("margin-bottom","10px")
+									.append($("<h3>").html("Advanced")
+													  .css("color","black")
+													  .css("text-align","left")
+										   )
+									.append($("<div>").attr("id","UR_TA_Timers")
+													  .css("width","135px")
+													  .css("position","relative")
+													  .css("float","left")
+													  .css("padding-top","5px")
+													  .append($("<span>").html('1st UR TA')
+																		.attr("title","Offset before attempting to insert into UR comment textarea for first loaded UR.")
+																		.css("text-align","center")
+																		.css("position","relative")
+																		.css("float","left")
+																		.css("height","24px")
+																		.css("width","99px")
+																		.css("color","black")
+															  )
+													  .append($("<input>").attr("type","text")
+																		  .attr("id","UR_First_TA_Time")
+																		  .attr("value",WMEAutoUR.Options.settings.firstURTextareaTime)
+																		  .css("height","24px")
+																		  .css("width","36px")
+																		  .css("text-align","center")
+																		  .css("position","relative")
+																		  .css("float","right")
+																		  .css("padding-top","5px")
+															  )
+													  .append($("<span>").html('Next UR TA')
+																		.attr("title","Offset before attempting to insert into UR comment textarea for consecutive URs.")
+																		.css("text-align","center")
+																		.css("position","relative")
+																		.css("float","left")
+																		.css("height","24px")
+																		.css("width","99px")
+																		.css("color","black")
+															  )
+													  .append($("<input>").attr("type","text")
+																		  .attr("id","UR_Next_TA_Time")
+																		  .attr("value",WMEAutoUR.Options.settings.nextURTextareaTime)
 																		  .css("height","24px")
 																		  .css("width","36px")
 																		  .css("text-align","center")
