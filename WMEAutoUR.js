@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.13.3
+// @version     0.13.4
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -13,6 +13,7 @@
 
 
 /* Changelog
+ * 0.13.4 - Reset bugfix
  * 0.13.3 - Fixed fatal error when new settings not present
  * 0.13.2 - Issues Fixed/Closed: #39  Added insert offset along with setting to tune offset
  * 0.13.1 - Stale/Dead messages tied to filters Issues Fixed/Closed: #36 #26 #2 #8
@@ -95,7 +96,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.13.3';
+	WMEAutoUR.version = '0.13.4';
 	WMEAutoUR.logPrefix = 'WMEAutoUR';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -756,7 +757,7 @@ function WMEAutoUR_Create() {
 			$('#WMEAutoUR_Settings_Select').empty();
 			$('#WMEAutoUR_Insert_Select').empty();
 
-			$('#WMEAutoUR_Settings_Comment').val('');
+			$('#WMEAutoUR_Settings_Comment').val(WMEAutoUR.Options.messages[6]);
 			$('#WME_AutoUR_MSG_Display').html('');
 			WMEAutoUR_TabbedUI.createSelect($('#WMEAutoUR_Settings_Select'));
 			WMEAutoUR_TabbedUI.createSelect($('#WMEAutoUR_Insert_Select'));
