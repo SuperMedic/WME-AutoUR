@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.13.0
+// @version     0.13.1
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -13,6 +13,7 @@
 
 
 /* Changelog
+ * 0.13.1 - Stale/Dead messages tied to filters Issues Fixed/Closed: #36 #26 #2 #8
  * 0.13.0 - Icon added (Thank you RickZAbel)
  * 0.12.11 - FF text issue fixed
  * 0.12.10 - Beta Updates, Fixed issues: #38 #18
@@ -92,7 +93,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.13.0';
+	WMEAutoUR.version = '0.13.1';
 	WMEAutoUR.logPrefix = 'WMEAutoUR';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -189,7 +190,7 @@ function WMEAutoUR_Create() {
 				console.info(WMEAutoUR.UR.selectedURid);
 				//if((WMEAutoUR.activeUR !== urID)) {
 					//WMEAutoUR.activeUR = urID;
-					$('span[id="WME_AutoUR_Info"]').html(WMEAutoUR.UR.getInfo());
+					$('span[id="WME_AutoUR_Info"]').html(WMEAutoUR.UR.getInfo(WMEAutoUR.UR.selectedURid));
 					//WMEAutoUR.Messages.Change(Waze.updateRequestsControl.currentRequest.attributes.type);
 					WMEAutoUR.Messages.Change(Waze.model.mapUpdateRequests.objects[WMEAutoUR.UR.selectedURid].attributes.type);
 					WMEAutoUR.Messages.ShowComment();
@@ -202,12 +203,12 @@ function WMEAutoUR_Create() {
 		/**
 		 *@since version 0.2.0
 		 */
-		getInfo: function() {
+		getInfo: function(urID) {
 
 			var error_update_user_id = '-1'; //  (user ID)
 			var error_update_user = 'Reporter'; //  (user ID)
 
-			var urID = WMEAutoUR.UR.selectedURid;
+			//var urID = WMEAutoUR.UR.selectedURid;
 			var urObj = Waze.model.mapUpdateRequests.objects[urID];
 
 			var now_time = new Date().getTime(); // (error number)
@@ -333,8 +334,11 @@ function WMEAutoUR_Create() {
 				if(WMEAutoUR.Auto.reporterComments(cur_ur_id)) continue;
 				// --- INITIAL COMMENT --- //
 				if($("#WME_AutoUR_Filter_button").val() == '-1') {
-					WMEAutoUR.Auto.Comments.initial(cur_ur_id);
-					continue;
+					if(WMEAutoUR.Auto.Comments.initial(cur_ur_id)){
+						WMEAutoUR.Auto.UR_len++;
+						WMEAutoUR.Auto.UR_WORK_IDs.push(cur_ur_id);
+						continue;
+					}
 				}
 				//// === SET UP TIMES === ////
 				// --- created in usec --- //
@@ -347,15 +351,21 @@ function WMEAutoUR_Create() {
 				var update_date = Math.floor(((((now_time - update_date_obj.getTime())/1000)/60)/60)/24);
 
 
-				  // --- STALE 1 COMMENT --- //
+				  // --- STALE COMMENT --- //
 				if($("#WME_AutoUR_Filter_button").val() == '0') {
-					WMEAutoUR.Auto.Comments.stale(cur_ur_id,update_date);
-					continue;
+					if(WMEAutoUR.Auto.Comments.stale(cur_ur_id,update_date)) {
+						WMEAutoUR.Auto.UR_len++;
+						WMEAutoUR.Auto.UR_WORK_IDs.push(cur_ur_id);
+						continue;
+					}
 				}
-				  // --- STALE 2 COMMENT --- //
+				  // --- DEAD COMMENT --- //
 				if($("#WME_AutoUR_Filter_button").val() == '1') {
-					WMEAutoUR.Auto.Comments.dead(cur_ur_id,update_date);
-					continue;
+					if(WMEAutoUR.Auto.Comments.dead(cur_ur_id,update_date)) {
+						WMEAutoUR.Auto.UR_len++;
+						WMEAutoUR.Auto.UR_WORK_IDs.push(cur_ur_id);
+						continue;
+					}
 				}
 			}
 			console.info(WMEAutoUR.Auto.UR_WORK_IDs);
@@ -379,10 +389,9 @@ function WMEAutoUR_Create() {
 			 */
 			initial: function(cur_id) {
 				if(!wazeModel.mapUpdateRequests.objects[cur_id].attributes.hasComments) {
-					WMEAutoUR.Auto.UR_len++;
-					WMEAutoUR.Auto.UR_WORK_IDs.push(cur_id);
+					return true;
 				}
-				return;
+				return false;
 			},
 			//--------------------------------------------------------------------------------------------------------------------------------------------
 			/**
@@ -391,11 +400,10 @@ function WMEAutoUR_Create() {
 			stale: function(cur_id,update) {
 				if(wazeModel.updateRequestSessions.objects[cur_id].comments.length == 1) {
 					if((update > WMEAutoUR.Options.settings.staleDays)) {
-						WMEAutoUR.Auto.UR_len++;
-						WMEAutoUR.Auto.UR_WORK_IDs.push(cur_id);
+						return true;
 					}
 				}
-				return;
+				return false;
 			},
 			//--------------------------------------------------------------------------------------------------------------------------------------------
 			/**
@@ -404,11 +412,10 @@ function WMEAutoUR_Create() {
 			dead: function(cur_id,update) {
 				if(wazeModel.updateRequestSessions.objects[cur_id].comments.length == 2) {
 					if((update > WMEAutoUR.Options.settings.deadDays)) {
-						WMEAutoUR.Auto.UR_len++;
-						WMEAutoUR.Auto.UR_WORK_IDs.push(cur_id);
+						return true;
 					}
 				}
-				return;
+				return false;
 			},
 			//--------------------------------------------------------------------------------------------------------------------------------------------
 			/**
@@ -468,6 +475,7 @@ function WMEAutoUR_Create() {
 		 *@since version 0.1.0
 		 */
 		firstUR: function() {
+			console.info("FIRST");
 			WMEAutoUR.Auto.gotoURByIndex(WMEAutoUR.Auto.index);
 		},
 
@@ -476,6 +484,7 @@ function WMEAutoUR_Create() {
 		 *@since version 0.1.0
 		 */
 		Next: function() {
+			console.info("NEXT");
 			if((WMEAutoUR.Auto.index+1) < WMEAutoUR.Auto.UR_len) {
 				WMEAutoUR.Auto.gotoURByIndex(++WMEAutoUR.Auto.index);
 			}
@@ -496,6 +505,7 @@ function WMEAutoUR_Create() {
 		 *@since version 0.1.0
 		 */
 		gotoURByIndex: function(URindex) {
+			console.info("gotoINDEX");
 			WMEAutoUR.Auto.curURid = WMEAutoUR.Auto.UR_WORK_IDs[URindex];
 			WMEAutoUR.Auto.gotoURById(WMEAutoUR.Auto.curURid);
 			return;
@@ -505,15 +515,23 @@ function WMEAutoUR_Create() {
 		/**
 		 *@since version 0.1.0
 		 */
-		gotoURById: function(URId) {
+		gotoURById: function(URid) {
+			console.info("gotoID "+URid);
 			$('span[id="WME_AutoUR_Count"]').html((WMEAutoUR.Auto.index+1)+"/"+WMEAutoUR.Auto.UR_len);
-			Waze.updateRequestsControl.selectById(URId);
-			var x = Waze.updateRequestsControl.currentRequest.attributes.geometry.x;
-			var y = Waze.updateRequestsControl.currentRequest.attributes.geometry.y;
+			// --- NEED TO MAKE FOR BETA --- //
+			Waze.updateRequestsControl.selectById(URid);
+			console.info("Selected UR");
+			var x = W.model.mapUpdateRequests.objects[URid].attributes.geometry.x;
+			var y = W.model.mapUpdateRequests.objects[URid].attributes.geometry.y;
 			Waze.map.setCenter([x,y],3);
-			WMEAutoUR.UR.getInfo();
-			WMEAutoUR.Messages.Change(Waze.updateRequestsControl.currentRequest.attributes.type);
+			console.info("Centered Map");
+			$('span[id="WME_AutoUR_Info"]').html(WMEAutoUR.UR.getInfo(URid));
+			console.info("Set Info");
+			//WMEAutoUR.Messages.Change(W.model.mapUpdateRequests.objects[URid].attributes.type);
+			WMEAutoUR.Messages.Change(Waze.model.mapUpdateRequests.objects[URid].attributes.type);
+			console.info("Change Message");
 			WMEAutoUR.Messages.ShowComment();
+			console.info("Show Comment");
 			return;
 		},
 
@@ -563,6 +581,8 @@ function WMEAutoUR_Create() {
 		 */
 		Save: function() {
 			console.info("WME-AutoUR: Save Settings");
+			WMEAutoUR.Options.settings['staleDays'] = $('#UR_Stale_Days').val();
+			WMEAutoUR.Options.settings['deadDays'] = $('#UR_Dead_Days').val();
 
 			localStorage.setItem('WME_AutoUR', JSON.stringify(WMEAutoUR.Options));
 		},
@@ -576,7 +596,7 @@ function WMEAutoUR_Create() {
 			console.info("WME-AutoUR: Load Settings");
 			WMEAutoUR.Options.names = [];
 			WMEAutoUR.Options.messages = [];
-			WMEAutoUR.Options.settings = [];
+			WMEAutoUR.Options.settings = {};
 			var newOpts;
 			var savedOpt = localStorage.WME_AutoUR;
 			if(savedOpt) {
@@ -605,7 +625,10 @@ function WMEAutoUR_Create() {
 				field += 4;
 			}
 
-			WMEAutoUR.Settings.setDefault(field);
+			if(field) {
+				WMEAutoUR.Settings.setDefault(field);
+			}
+
 
 			console.info("WME-AutoUR: checking defaults... done");
 		},
@@ -646,7 +669,7 @@ function WMEAutoUR_Create() {
 			def_messages[50] = "Without further information this report will be closed soon.";
 			def_messages[51] = "Without further information we are unable fix this report. Please resubmit with more information.";
 
-			var def_settings = [];
+			var def_settings = {};
 			def_settings['staleDays'] = 7;
 			def_settings['deadDays'] = 7;
 
@@ -668,6 +691,7 @@ function WMEAutoUR_Create() {
 			} else {
 				WMEAutoUR.Options.names = def_names;
 				WMEAutoUR.Options.messages = def_messages;
+				WMEAutoUR.Options.settings = def_settings;
 			}
 
 			WMEAutoUR.Settings.Save();
@@ -680,7 +704,7 @@ function WMEAutoUR_Create() {
 		 */
 		Reset: function() {
 			console.info("WME-AutoUR: RESET");
-			WMEAutoUR.Settings.setDefault(3);
+			WMEAutoUR.Settings.setDefault(7);
 			$('#WMEAutoUR_Settings_Select').empty();
 			$('#WMEAutoUR_Insert_Select').empty();
 
@@ -711,6 +735,7 @@ function WMEAutoUR_Create() {
 		 */
 		Change: function() {
 			var index;
+			console.info("CHANGE");
 			if((arguments.length == 1) && (typeof arguments[0] == "number")) {
 				index = arguments[0];
 				$('#WMEAutoUR_Settings_Select').val(index);
@@ -720,6 +745,12 @@ function WMEAutoUR_Create() {
 			if(index === null) {
 				index = $("#WMEAutoUR_Settings_Select").val();
 			}
+			if($("#WME_AutoUR_Filter_button").val() === '0') {
+				index = 50;
+			} else if($("#WME_AutoUR_Filter_button").val() === '1') {
+				index = 51;
+			}
+			console.info(index);
 			$("#WMEAutoUR_Settings_Comment").val(WMEAutoUR.Options.messages[index]);
 			$("#WME_AutoUR_MSG_Display").html(WMEAutoUR.Options.messages[index]);
 			$('#WMEAutoUR_Insert_Select').val(index);
@@ -742,6 +773,7 @@ function WMEAutoUR_Create() {
 		 *@since version 0.3.0
 		 */
 		Insert: function() {
+			console.info("INSERT");
 			var urID = WMEAutoUR.UR.selectedURid;
 			if(WMEAutoUR.isBeta) {
 				$('form.new-comment-form .new-comment-text').html(WMEAutoUR.Options.messages[Waze.model.mapUpdateRequests.objects[urID].attributes.type]);
@@ -1253,8 +1285,6 @@ function WMEAutoUR_Create_TabbedUI() {
 	// ------- SETTINGS TAB ------- //
 	WMEAutoUR_TabbedUI.SettingsTAB = function() {
 
-		var clearDIV = $("<div>").css("clear","both");
-
 		var setTAB = $('<div>').attr("id",'WMEAutoUR_SET_TAB')
 								//.css("padding","10px")
 								.css("max-width","275px")
@@ -1275,7 +1305,6 @@ function WMEAutoUR_Create_TabbedUI() {
 
 		// ---  MESSAGES --- //
 		$(setTAB).append($("<div>").css("clear","both")
-									//.css("height","156px")
 									.css("margin-bottom","10px")
 									.append($("<h3>").html("Messages")
 													  .css("color","black")
@@ -1291,41 +1320,60 @@ function WMEAutoUR_Create_TabbedUI() {
 														  .css("clear","both")
 										   )
 									.append(select)
-						  ).append(clearDIV);
+									.append($("<div>").css("clear","both"))
+						  );
 
 		// ---  MESSAGES --- //
 		$(setTAB).append($("<div>").css("clear","both")
-									//.css("height","156px")
 									.css("margin-bottom","10px")
 									.append($("<h3>").html("Filters")
 													  .css("color","black")
 													  .css("text-align","left")
 										   )
-									.append($("<input>").attr("type","text")
-														.attr("id","UR_Stale_Days")
-														.attr("disabled","true")
-														.attr("value",WMEAutoUR.Options.settings.staleDays)
-														.css("height","24px")
-														.css("width","36px")
-														.css("text-align","center")
-														.css("position","relative")
-														.css("float","left")
-														.css("clear","both")
-														.css("padding-top","5px")
+									.append($("<dif>").attr("id","UR_Stale_Dead")
+													  .css("width","49%")
+													  .css("position","relative")
+													  .css("float","left")
+													  .css("padding-top","5px")
+													  .append($("<span>").html('Stale Days')
+																		.attr("title","Days since first editor comment.")
+																		.css("text-align","center")
+																		.css("position","relative")
+																		.css("float","left")
+																		.css("height","24px")
+																		.css("color","black")
+															  )
+													  .append($("<input>").attr("type","text")
+																		  .attr("id","UR_Stale_Days")
+																		  .attr("value",WMEAutoUR.Options.settings.staleDays)
+																		  .css("height","24px")
+																		  .css("width","36px")
+																		  .css("text-align","center")
+																		  .css("position","relative")
+																		  .css("float","right")
+																		  .css("padding-top","5px")
+															  )
+													  .append($("<span>").html('Dead Days')
+																		.attr("title","Days since second editor comment.")
+																		.css("text-align","center")
+																		.css("position","relative")
+																		.css("float","left")
+																		.css("height","24px")
+																		.css("color","black")
+															  )
+													  .append($("<input>").attr("type","text")
+																		  .attr("id","UR_Dead_Days")
+																		  .attr("value",WMEAutoUR.Options.settings.deadDays)
+																		  .css("height","24px")
+																		  .css("width","36px")
+																		  .css("text-align","center")
+																		  .css("position","relative")
+																		  .css("float","right")
+																		  .css("padding-top","5px")
+															  )
 											)
-									.append($("<input>").attr("type","text")
-														.attr("id","UR_Dead_Days")
-														.attr("disabled","true")
-														.attr("value",WMEAutoUR.Options.settings.deadDays)
-														.css("height","24px")
-														.css("width","36px")
-														.css("text-align","center")
-														.css("position","relative")
-														.css("float","left")
-														.css("clear","both")
-														.css("padding-top","5px")
-											)
-						  ).append(clearDIV);
+									.append($("<div>").css("clear","both"))
+						  );
 
 
 
@@ -1343,7 +1391,7 @@ function WMEAutoUR_Create_TabbedUI() {
 				  .attr("title","Reset settings to defaults."));
 
 
-		$(setTAB).append(clearDIV);
+		$(setTAB).append($("<div>").css("clear","both"));
 
 
 		return setTAB;
