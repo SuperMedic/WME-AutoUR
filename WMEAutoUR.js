@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.13.2
+// @version     0.13.3
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -13,6 +13,7 @@
 
 
 /* Changelog
+ * 0.13.3 - Fixed fatal error when new settings not present
  * 0.13.2 - Issues Fixed/Closed: #39  Added insert offset along with setting to tune offset
  * 0.13.1 - Stale/Dead messages tied to filters Issues Fixed/Closed: #36 #26 #2 #8
  * 0.13.0 - Icon added (Thank you RickZAbel)
@@ -94,7 +95,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	WMEAutoUR = {};
-	WMEAutoUR.version = '0.13.2';
+	WMEAutoUR.version = '0.13.3';
 	WMEAutoUR.logPrefix = 'WMEAutoUR';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -294,7 +295,7 @@ function WMEAutoUR_Create() {
 					}
 				}
 			}
-			W.model.updateRequestSessions.get(WMEAutoUR.Auto.UR_VIEW_IDs)
+			W.model.updateRequestSessions.get(WMEAutoUR.Auto.UR_VIEW_IDs);
 // --- WHY ARE WE WAITING HERE? --- //
 			window.setTimeout(WMEAutoUR.Auto.filterURs,1500);
 
@@ -555,7 +556,7 @@ function WMEAutoUR_Create() {
 
 			return;
 		}
-	}
+	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//----------------------  END AUTO UR FUNCTIONS  ---------------------------------------------------------------------------------------------
@@ -574,9 +575,8 @@ function WMEAutoUR_Create() {
 		 */
 		Save: function() {
 			console.info("WME-AutoUR: Save All");
-			WMEAutoUR.Options.settings['staleDays'] = $('#UR_Stale_Days').val();
-			WMEAutoUR.Options.settings['deadDays'] = $('#UR_Dead_Days').val();
 
+			WMEAutoUR.Settings.saveMessages();
 			WMEAutoUR.Settings.saveSettings();
 			WMEAutoUR.Settings.saveToStorage();
 		},
@@ -584,13 +584,19 @@ function WMEAutoUR_Create() {
 		/**
 		 *@since version 0.4.1
 		 */
+		saveMessages: function() {
+			console.info("WME-AutoUR: Save Messages");
+		},
+
+		/**
+		 *@since version 0.4.1
+		 */
 		saveSettings: function() {
 			console.info("WME-AutoUR: Save Settings");
-			WMEAutoUR.Options.settings['staleDays'] = 			$('#UR_Stale_Days').val();
-			WMEAutoUR.Options.settings['deadDays'] = 			$('#UR_Dead_Days').val();
-			WMEAutoUR.Options.settings['firstURTextareaTime'] = $('#UR_First_TA_Time').val();
-			WMEAutoUR.Options.settings['nextURTextareaTime'] = 	$('#UR_Next_TA_Time').val();
-
+			WMEAutoUR.Options.settings.staleDays = 				$('#UR_Stale_Days').val();
+			WMEAutoUR.Options.settings.deadDays = 				$('#UR_Dead_Days').val();
+			WMEAutoUR.Options.settings.firstURTextareaTime = 	$('#UR_First_TA_Time').val();
+			WMEAutoUR.Options.settings.nextURTextareaTime = 	$('#UR_Next_TA_Time').val();
 		},
 
 		/**
@@ -610,10 +616,11 @@ function WMEAutoUR_Create() {
 			//WMEAutoUR.Options.names = [];
 			//WMEAutoUR.Options.messages = [];
 			//WMEAutoUR.Options.settings = {};
-			var newOpts;
-			var savedOpt = localStorage.WME_AutoUR;
-			if(savedOpt) {
+			var newOpts
+			try {
 				newOpts = JSON.parse(localStorage.WME_AutoUR);
+			} catch(e){
+				// --- SOMETHING SHOUDL BE HERE --- //
 			}
 
 			if(typeof(newOpts) !== 'undefined') {
@@ -622,22 +629,34 @@ function WMEAutoUR_Create() {
 
 			// --- Load Defaults --- //
 			var field = 0;
-			if(WMEAutoUR.Options.names[50]) {
-			  console.info("Name test: "+WMEAutoUR.Options.names[50]);
-			} else {
+			try {
+				if(WMEAutoUR.Options.names[50]) {
+				  console.info("Name test: "+WMEAutoUR.Options.names[50]);
+				} else {
+					throw "";
+				}
+			} catch(e) {
 				field += 1;
 			}
-			if(WMEAutoUR.Options.messages[50]) {
-			  console.info("Message test: "+WMEAutoUR.Options.messages[50]);
-			} else {
+			try {
+				if(WMEAutoUR.Options.messages[50]) {
+				  console.info("Message test: "+WMEAutoUR.Options.messages[50]);
+				} else {
+					throw "";
+				}
+			} catch(e) {
 				field += 2;
 			}
-			if(WMEAutoUR.Options.settings['nextURTextareaTime']) {
-			  console.info("Settings test: "+WMEAutoUR.Options.settings['nextURTextareaTime']);
-			} else {
+			try {
+				if(WMEAutoUR.Options.settings.nextURTextareaTime) {
+					console.info("Settings test: "+WMEAutoUR.Options.settings.nextURTextareaTime);
+				} else {
+					throw "";
+				}
+			} catch(e) {
 				field += 4;
 			}
-console.info(field);
+			console.info(field);
 			if(field) {
 				WMEAutoUR.Settings.setDefault(field);
 			}
@@ -684,10 +703,10 @@ console.info(field);
 			def_messages[51] = "Without further information we are unable fix this report. Please resubmit with more information.";
 
 			var def_settings = {};
-			def_settings['staleDays'] = 7;
-			def_settings['deadDays'] = 7;
-			def_settings['firstURTextareaTime'] = 1000;
-			def_settings['nextURTextareaTime'] = 500;
+			def_settings.staleDays = 7;
+			def_settings.deadDays = 7;
+			def_settings.firstURTextareaTime = 1000;
+			def_settings.nextURTextareaTime = 500;
 
 			// --- Load Defaults --- //
 			if((typeof(arguments[0]) == 'number')) {
@@ -748,11 +767,12 @@ console.info(field);
 		 *@since version 0.5.0
 		 */
 		resetSettings: function() {
+
 			console.info("WME-AutoUR: reset settings");
-			$('#UR_Stale_Days').val() =		WMEAutoUR.Options.settings['staleDays'];
-			$('#UR_Dead_Days').val() =		WMEAutoUR.Options.settings['deadDays'];
-			$('#UR_First_TA_Time').val() =	WMEAutoUR.Options.settings['firstURTextareaTime'];
-			$('#UR_Next_TA_Time').val() =	WMEAutoUR.Options.settings['nextURTextareaTime'];
+			$('#UR_Stale_Days').val(WMEAutoUR.Options.settings.staleDays);
+			$('#UR_Dead_Days').val(WMEAutoUR.Options.settings.deadDays);
+			$('#UR_First_TA_Time').val(WMEAutoUR.Options.settings.firstURTextareaTime);
+			$('#UR_Next_TA_Time').val(WMEAutoUR.Options.settings.nextURTextareaTime);
 		}
 	};
 
@@ -766,8 +786,9 @@ console.info(field);
 		 *@since version 0.5.0
 		 */
 		SaveSettingSelect: function() {
-			WMEAutoUR.Options.messages[$(this).val()] = $("#WMEAutoUR_Inital_Comment").val();
-			WMEAutoUR.Settings.Save();
+			console.info($(this).val());
+			WMEAutoUR.Options.messages[$(this).val()] = $("#WMEAutoUR_Settings_Comment").val();
+			//WMEAutoUR.Settings.Save();
 		},
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -812,7 +833,7 @@ console.info(field);
 			console.info(index);
 			$("#WME_AutoUR_MSG_Display").html(WMEAutoUR.Options.messages[index]);
 			$('#WMEAutoUR_Insert_Select').val(index);
-			console.info("Ofsets: "+WMEAutoUR.Options.settings.firstURTextareaTime+" : "+WMEAutoUR.Options.settings.nextURTextareaTime)
+			console.info("Ofsets: "+WMEAutoUR.Options.settings.firstURTextareaTime+" : "+WMEAutoUR.Options.settings.nextURTextareaTime);
 
 			try {
 				if($("#update-request-panel textarea").length!==0) {
@@ -892,9 +913,9 @@ console.info(field);
 		/**
 		 *@since version 0.12.5
 		 */
-		Close: function() {
-			WMEAutoUR.Messages.Send();
-		},
+		//Close: function() {
+		//	WMEAutoUR.Messages.Send();
+		//},
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
@@ -1026,7 +1047,7 @@ function WMEAutoUR_Create_TabbedUI() {
 		$(ParentDIV).append(TabBody);
 
 		// See if the div is already created //
-		if ($("#WME_AutoUR_TAB_main").length==0) {
+		if ($("#WME_AutoUR_TAB_main").length===0) {
 			$("div.tips").after(ParentDIV);
 			console.info("WME-WMEAutoUR_TabbedUI: Loaded Pannel");
 		}
@@ -1364,6 +1385,7 @@ function WMEAutoUR_Create_TabbedUI() {
 													  .css("text-align","left")
 										   )
 									.append($("<textarea>").attr("id","WMEAutoUR_Settings_Comment")
+														  .val(WMEAutoUR.Options.messages[6])
 														  .css("float","left")
 														  .css("height","125px")
 														  .css("position","relative")
@@ -1374,7 +1396,7 @@ function WMEAutoUR_Create_TabbedUI() {
 										   )
 									.append(select)
 									.append($("<div>").css("clear","both"))
-						  );
+						);
 
 		// ---  FILTERS --- //
 		$(setTAB).append($("<div>").css("clear","both")
