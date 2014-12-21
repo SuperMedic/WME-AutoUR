@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.13.4
+// @version     0.14.0-SK
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -13,56 +13,11 @@
 
 
 /* Changelog
- * 0.13.4 - Reset bugfix
+ * 0.14.0 - Moved to ScriptKit with SK Loader
  * 0.13.3 - Fixed fatal error when new settings not present
  * 0.13.2 - Issues Fixed/Closed: #39  Added insert offset along with setting to tune offset
  * 0.13.1 - Stale/Dead messages tied to filters Issues Fixed/Closed: #36 #26 #2 #8
  * 0.13.0 - Icon added (Thank you RickZAbel)
- * 0.12.11 - FF text issue fixed
- * 0.12.10 - Beta Updates, Fixed issues: #38 #18
- * 0.12.9 - Find UR Fx updated.
- * 0.12.8 - UI update
- * 0.12.7 - UI update, Stale/Dead messages enabled
- * 0.12.6 - UI update
- * 0.12.5 - Removed Floating_UI, Send/Solve/NI buttons enabled, Send CB, Auto-advance CB
- * 0.12.4 - Fixed issue #31, undef options var
- * 0.12.3 - LINT fixes, Fixed jump to 1st UR, Fixed following issues #13,#29.1
- * 0.12.2 - Reset now repopulates select, New select added to front page and tied into reset
- * 0.12.1 - Confined Auto selection to screen, enabled Initial/Stale/Dead/None filters, disabled send/solve/notID buttons
- * 0.12.0 - Merged UI from branch, Updated Dev info, Created default messages
- * 0.11.2 - UI fix FF
- * 0.11.1 - Background proccesses now stop when AutoUR is minimized
- * 0.11.0 - Added tabbed interface
- * 0.10.0 - Added toggle button for floating UI
- * 0.9.6a - Fixed auto count update issue
- * 0.9.6 - Moved Auto Buttons to bottom
- * 0.9.5 - Code clairity rewrite
- * 0.9.0 - Added support for manually choosing UR
- * 0.8.3 - Organized code
- * 0.8.2 - Removed auto UR find
- * 0.8.1 - Cleaned up INIT code
- * 0.8.0 - Added Google Chrome support
- * 0.7.5 - added @downloadURL
- * 0.7.4 - Updated webpage includes where script is run
- * 0.7.3 - Updated @since comments
- * 0.7.2 - Added title, dev info, and added to GitHub
- * 0.7.1 - Create default settings for new install
- * 0.6.1 - Create dropdown for choosing message to insert/edit
- * 0.6.0 - Update changeMessage to allow access by ID/reference
- * 0.5.0 - Allow changes to user UR messages to be injected
- * 0.4.2 - Load user settings
- * 0.4.1 - Save user settings
- * 0.4.0 - Access user settings
- * 0.3.1 - Create toolbar pannel
- * 0.3.0 - Inject comments into UR textarea
- * 0.2.0 - Display UR info, update on change
- * 0.1.4 - UI draggable
- * 0.1.3 - Limit prev/next movement by UR array count
- * 0.1.2 - ##########
- * 0.1.1 - Move map when switching, centering on current UR, zoom level 3
- * 0.1.0 - Switch between URs
- * 0.0.2 - Initial UI
- * 0.0.1 - Initial version, loading and displaying through console.info()
  */
 
 function wme_auto_ur_bootstrap() {
@@ -1030,28 +985,34 @@ function WMEAutoUR_Create_TabbedUI() {
 	 *@since version 0.11.0
 	 */
 	WMEAutoUR_TabbedUI.init = function() {
-
-		var ParentDIV = WMEAutoUR_TabbedUI.ParentDIV();
-		$(ParentDIV).append(WMEAutoUR_TabbedUI.Title());
-		//$(ParentDIV).append($('<span>').attr("id","WME_AutoUR_Info")
-		//								.click(function(){$(this).html('');})
-		//								.css("color","#000000"));
-
-		$(ParentDIV).append(WMEAutoUR_TabbedUI.TabsHead());
-
-		var TabBody = WMEAutoUR_TabbedUI.TabsBody();
-
-		$(TabBody).append(WMEAutoUR_TabbedUI.EditorTAB);
-		//$(TabBody).append(WMEAutoUR_TabbedUI.MessagesTAB);
-		$(TabBody).append(WMEAutoUR_TabbedUI.SettingsTAB);
-
-		$(ParentDIV).append(TabBody);
-
-		// See if the div is already created //
+        // See if the div is already created //
 		if ($("#WME_AutoUR_TAB_main").length===0) {
-			$("div.tips").after(ParentDIV);
+            var ParentDIV = WMEAutoUR_TabbedUI.ParentDIV();
+            $(ParentDIV).append(WMEAutoUR_TabbedUI.Title());
+            //$(ParentDIV).append($('<span>').attr("id","WME_AutoUR_Info")
+            //								.click(function(){$(this).html('');})
+            //								.css("color","#000000"));
+
+            $(ParentDIV).append(WMEAutoUR_TabbedUI.TabsHead());
+
+            var TabBody = WMEAutoUR_TabbedUI.TabsBody();
+
+            $(TabBody).append(WMEAutoUR_TabbedUI.EditorTAB);
+            //$(TabBody).append(WMEAutoUR_TabbedUI.MessagesTAB);
+            $(TabBody).append(WMEAutoUR_TabbedUI.SettingsTAB);
+
+            $(ParentDIV).append(TabBody);
+
+			//$('#sidepanel-scriptkit-scripts').children().last().before($(ParentDIV));
 			console.info("WME-WMEAutoUR_TabbedUI: Loaded Pannel");
 		}
+        // See if the div is already created //
+		if ($('#sidepanel-scriptkit-scripts').length!==0) {
+            $('#sidepanel-scriptkit-scripts').children().last().before($(ParentDIV));
+			console.info("WME-WMEAutoUR_TabbedUI: Loaded Pannel");
+        } else {
+            window.setTimeout(WMEAutoUR_TabbedUI.init,500);
+        }
 
 	};
 
