@@ -2,7 +2,7 @@
 // @name        WME AutoUR-SK
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.14.1SK
+// @version     0.15.0SK
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -12,6 +12,7 @@
 
 
 /* Changelog
+ * 0.15.0SK - Added fully custom messgaes, Bug fixes: initial minimization, updated date conversion, saving issues
  * 0.14.1SK - unsafeWindow update
  * 0.14.0SK - Moved to ScriptKit with SK Loader
  * 0.13.3 - Fixed fatal error when new settings not present
@@ -51,7 +52,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	unsafeWindow.WMEAutoUR = {};
-	WMEAutoUR.version = '0.14.1SK';
+	WMEAutoUR.version = '0.15.0SK';
 	WMEAutoUR.logPrefix = 'WMEAutoUR';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -110,7 +111,7 @@ function WMEAutoUR_Create() {
 	// @since 0.8.2 - Turned off auto UR finding
 		WMEAutoUR.Auto.index = 0;
 		//WMEAutoUR.Intervals.getActive = window.setInterval(WMEAutoUR.UR.getActive,250);
-		WMEAutoUR.Intervals.SaveSettings = window.setInterval(WMEAutoUR.Settings.Save,30000);
+		//WMEAutoUR.Intervals.SaveSettings = window.setInterval(WMEAutoUR.Settings.Save,30000);
 		WMEAutoUR.showDevInfo();
 		//WMEAutoUR_TabbedUI.hideWindow();
 		$(document).tooltip();
@@ -187,7 +188,8 @@ function WMEAutoUR_Create() {
 			//info_txt = info_txt+"X: "+error_x+"<br>";
 			//info_txt = info_txt+"Y: "+error_y+"<br>";
 
-			var error_update_date = Math.floor(((((now_time - error_update_date_obj.getTime())/1000)/60)/60)/24) + " days ago";
+			var error_update_date = Math.floor(((((now_time - error_update_date_obj.getTime())/1000)/60)/60)/24);
+			error_update_date = ((error_update_date>180)?'never':(error_update_date + " days ago"));
 			var error_drive_date = Math.floor(((((now_time - error_drive_date_obj.getTime())/1000)/60)/60)/24) + " days ago";
 
 			info_txt = info_txt+"<b>Created:</b> "+error_drive_date+"<br>";
@@ -573,6 +575,7 @@ function WMEAutoUR_Create() {
 			//WMEAutoUR.Options.messages = [];
 			//WMEAutoUR.Options.settings = {};
 			var newOpts
+			console.info(localStorage.WME_AutoUR);
 			try {
 				newOpts = JSON.parse(localStorage.WME_AutoUR);
 			} catch(e){
@@ -699,6 +702,7 @@ function WMEAutoUR_Create() {
 			console.info("WME-AutoUR: RESET");
 			WMEAutoUR.Settings.setDefault(7);
 
+			$('#WMEAutoUR_Settings_Comment').val(WMEAutoUR.Options.messages[6]);
 			WMEAutoUR.Settings.resetMessages();
 			WMEAutoUR.Settings.resetSettings();
 		},
@@ -712,7 +716,6 @@ function WMEAutoUR_Create() {
 			$('#WMEAutoUR_Settings_Select').empty();
 			$('#WMEAutoUR_Insert_Select').empty();
 
-			$('#WMEAutoUR_Settings_Comment').val(WMEAutoUR.Options.messages[6]);
 			$('#WME_AutoUR_MSG_Display').html('');
 			WMEAutoUR_TabbedUI.createSelect($('#WMEAutoUR_Settings_Select'));
 			WMEAutoUR_TabbedUI.createSelect($('#WMEAutoUR_Insert_Select'));
@@ -742,9 +745,17 @@ function WMEAutoUR_Create() {
 		 *@since version 0.5.0
 		 */
 		SaveSettingSelect: function() {
-			console.info($(this).val());
-			WMEAutoUR.Options.messages[$(this).val()] = $("#WMEAutoUR_Settings_Comment").val();
-			//WMEAutoUR.Settings.Save();
+			var id = null;
+			if($(this).val() >= 1) {
+				id = $(this).val();
+			} else {
+				id = $('#WMEAutoUR_Settings_Select').val();
+			}
+			console.info(id);
+			console.info('Before: '+WMEAutoUR.Options.messages[id]);
+			WMEAutoUR.Options.messages[id] = $("#WMEAutoUR_Settings_Comment").val();
+			console.info('After: '+WMEAutoUR.Options.messages[id]);
+			WMEAutoUR.Settings.saveToStorage();
 		},
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -869,9 +880,16 @@ function WMEAutoUR_Create() {
 		/**
 		 *@since version 0.12.5
 		 */
-		//Close: function() {
-		//	WMEAutoUR.Messages.Send();
-		//},
+		addCustom: function() {
+			var name = $('#WMEAutoUR_Settings_customName').val();
+			if(WMEAutoUR.Options.messages.length<60) {
+				WMEAutoUR.Options.names[60] = name;
+			} else {
+				WMEAutoUR.Options.names.push(name);
+			}
+
+			WMEAutoUR.Settings.resetMessages();
+		},
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		/**
@@ -1005,7 +1023,7 @@ function WMEAutoUR_Create_TabbedUI() {
             $(urParentDIV).append(TabBody);
 
 			//$('#sidepanel-scriptkit-scripts').children().last().before($(ParentDIV));
-			console.info("WME-WMEAutoUR_TabbedUI: Loaded Pannel");
+			console.info("WME-WMEAutoUR_TabbedUI: Created Pannel");
 		}
         // See if the div is already created //
 		//if ($('#sidepanel-scriptkit-scripts').length!==0) {
@@ -1017,7 +1035,7 @@ function WMEAutoUR_Create_TabbedUI() {
         } else {
             window.setTimeout(WMEAutoUR_TabbedUI.init,500);
         }
-		WMEAutoUR_TabbedUI.hideWindow();
+		//WMEAutoUR_TabbedUI.hideWindow();
 	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -1050,7 +1068,7 @@ function WMEAutoUR_Create_TabbedUI() {
 								.css("margin","5px 0")
 								.css("padding-bottom","10px")
 								.css("max-width","275px")
-								//.css("width","208px")
+								.css("height","30px")
 								.css("overflow","hidden")
 								.css("display","block");
 
@@ -1079,7 +1097,7 @@ function WMEAutoUR_Create_TabbedUI() {
 						.attr("title","Click for Development Info");
 
 		$(mainTitle).append($('<div>').attr("id","WMEAutoUR_TabbedUI_toggle")
-									  .html("-")
+									  .html("+")
 									  .css("float","right")
 									  .css("position","relative")
 									  .css("color","#ffffff")
@@ -1334,7 +1352,7 @@ function WMEAutoUR_Create_TabbedUI() {
 
 		var select = $("<select>").attr("id","WMEAutoUR_Settings_Select")
 								.attr("title","Select Message")
-								.css("width","100%")
+								.css("width","225px")
 								.css("float","left")
 								.change(WMEAutoUR.Messages.ChangeSettingSelect)
 								.focus(WMEAutoUR.Messages.SaveSettingSelect)
@@ -1361,6 +1379,20 @@ function WMEAutoUR_Create_TabbedUI() {
 														  .css("clear","both")
 										   )
 									.append(select)
+									.append($("<button>").html("Save")
+														 .css("width",'50px')
+														 .css("float",'left')
+														 .click(WMEAutoUR.Messages.SaveSettingSelect)
+											)
+									.append($("<button>").html("Custom Msg")
+														 .css("width",'35%')
+														 .css("float",'left')
+														 .click(WMEAutoUR.Messages.addCustom)
+											)
+									.append($("<input>").attr('type','text')
+														 .attr("id",'WMEAutoUR_Settings_customName')
+														 .css("width",'65%')
+											)
 									.append($("<div>").css("clear","both"))
 						);
 
@@ -1419,6 +1451,11 @@ function WMEAutoUR_Create_TabbedUI() {
 						  );
 
 		// ---  Advanced --- //
+		console.info(WMEAutoUR.Options.settings.staleDays);
+		console.info(WMEAutoUR.Options.settings.deadDays);
+		console.info(WMEAutoUR.Options.settings.firstURTextareaTime);
+		console.info(WMEAutoUR.Options.settings.nextURTextareaTime);
+
 		$(setTAB).append($("<div>").css("clear","both")
 									.css("margin-bottom","10px")
 									.append($("<h3>").html("Advanced")
@@ -1512,7 +1549,7 @@ function WMEAutoUR_Create_TabbedUI() {
 					$(g1).append(opt);
 				} else if(i<60) {
 					$(g2).append(opt);
-				} else if(i>60) {
+				} else if(i>59) {
 					$(g3).append(opt);
 				}
 			}
