@@ -33,36 +33,6 @@
  * 0.11.2 - UI fix FF
  * 0.11.1 - Background proccesses now stop when AutoUR is minimized
  * 0.11.0 - Added tabbed interface
- * 0.10.0 - Added toggle button for floating UI
- * 0.9.6a - Fixed auto count update issue
- * 0.9.6 - Moved Auto Buttons to bottom
- * 0.9.5 - Code clairity rewrite
- * 0.9.0 - Added support for manually choosing UR
- * 0.8.3 - Organized code
- * 0.8.2 - Removed auto UR find
- * 0.8.1 - Cleaned up INIT code
- * 0.8.0 - Added Google Chrome support
- * 0.7.5 - added @downloadURL
- * 0.7.4 - Updated webpage includes where script is run
- * 0.7.3 - Updated @since comments
- * 0.7.2 - Added title, dev info, and added to GitHub
- * 0.7.1 - Create default settings for new install
- * 0.6.1 - Create dropdown for choosing message to insert/edit
- * 0.6.0 - Update changeMessage to allow access by ID/reference
- * 0.5.0 - Allow changes to user UR messages to be injected
- * 0.4.2 - Load user settings
- * 0.4.1 - Save user settings
- * 0.4.0 - Access user settings
- * 0.3.1 - Create toolbar pannel
- * 0.3.0 - Inject comments into UR textarea
- * 0.2.0 - Display UR info, update on change
- * 0.1.4 - UI draggable
- * 0.1.3 - Limit prev/next movement by UR array count
- * 0.1.2 - ##########
- * 0.1.1 - Move map when switching, centering on current UR, zoom level 3
- * 0.1.0 - Switch between URs
- * 0.0.2 - Initial UI
- * 0.0.1 - Initial version, loading and displaying through console.info()
  */
 
 function wme_auto_ur_bootstrap() {
@@ -232,7 +202,8 @@ function WMEAutoUR_Create() {
 			//info_txt = info_txt+"X: "+error_x+"<br>";
 			//info_txt = info_txt+"Y: "+error_y+"<br>";
 
-			var error_update_date = Math.floor(((((now_time - error_update_date_obj.getTime())/1000)/60)/60)/24) + " days ago";
+			var error_update_date = Math.floor(((((now_time - error_update_date_obj.getTime())/1000)/60)/60)/24);
+			error_update_date = ((error_update_date>180)?'never':(error_update_date + " days ago"));
 			var error_drive_date = Math.floor(((((now_time - error_drive_date_obj.getTime())/1000)/60)/60)/24) + " days ago";
 
 			info_txt = info_txt+"<b>Created:</b> "+error_drive_date+"<br>";
