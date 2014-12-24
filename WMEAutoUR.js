@@ -2,7 +2,7 @@
 // @name        WME AutoUR
 // @namespace   com.supermedic.wmeautour
 // @description Autofill UR comment boxes with user defined canned messages
-// @version     0.13.5
+// @version     0.13.6
 // @grant       none
 // @match       https://editor-beta.waze.com/*editor/*
 // @match       https://www.waze.com/*editor/*
@@ -12,6 +12,7 @@
 
 
 /* Changelog
+ * 0.13.6 - Updated merge issues
  * 0.13.5 - Merge with SK
  * 0.13.4 - Reset bugfix
  * 0.13.3 - Fixed fatal error when new settings not present
@@ -51,7 +52,7 @@ function wme_auto_ur_bootstrap() {
  */
 function WMEAutoUR_Create() {
 	unsafeWindow.WMEAutoUR = {};
-	WMEAutoUR.version = '0.13.4';
+	WMEAutoUR.version = '0.13.6';
 	WMEAutoUR.logPrefix = 'WMEAutoUR';
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -1002,6 +1003,7 @@ function WMEAutoUR_Create_TabbedUI() {
 	var urParentDIV
 	WMEAutoUR_TabbedUI.init = function() {
         // See if the div is already created //
+		var urParentDIV = null;
 		if ($("#WME_AutoUR_TAB_main").length===0) {
             urParentDIV = WMEAutoUR_TabbedUI.ParentDIV();
             $(urParentDIV).append(WMEAutoUR_TabbedUI.Title());
@@ -1021,13 +1023,12 @@ function WMEAutoUR_Create_TabbedUI() {
 
 		// See if the div is already created //
 		//if ($("#WME_AutoUR_TAB_main").length===0) {
-		
+
 			console.info("WME-WMEAutoUR_TabbedUI: Loaded Pannel");
 			//ScriptKit.GUI.addImage(1,icon,WMEAutoUR_TabbedUI.hideWindow);
-        } else {
-            window.setTimeout(WMEAutoUR_TabbedUI.init,500);
         }
-			$("div.tips").after(ParentDIV);
+
+		$("div.tips").after(urParentDIV);
 	};
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
